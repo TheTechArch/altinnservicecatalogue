@@ -2,6 +2,6 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ActiveDebugProfile>https</ActiveDebugProfile>
-    <NameOfLastUsedPublishProfile>D:\repos\altinnservicecatalogue\.github\workflows\AltinnServiceCatalogue.yml</NameOfLastUsedPublishProfile>
+    <NameOfLastUsedPublishProfile>D:\repos\altinnservicecatalogue\src\AltinnServiceCatalogue\AltinnServiceCatalogue.Server\Properties\PublishProfiles\AltinnServiceCatalogue - Web Deploy.pubxml</NameOfLastUsedPublishProfile>
   </PropertyGroup>
 </Project>

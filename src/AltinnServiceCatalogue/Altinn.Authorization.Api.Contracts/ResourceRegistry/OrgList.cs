@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace Altinn.ResourceRegistry.Core.Models
+﻿namespace Altinn.ResourceRegistry.Core.Models
 {
     /// <summary>
     /// Defines a list of orgs

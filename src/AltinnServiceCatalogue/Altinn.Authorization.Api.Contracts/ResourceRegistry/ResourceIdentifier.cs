@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Altinn.ResourceRegistry.Core.Helpers;
 using Altinn.Swashbuckle.Examples;
 
 namespace Altinn.ResourceRegistry.Core.Models;
@@ -73,12 +72,6 @@ public sealed record ResourceIdentifier
 
     private static bool TryParse(ReadOnlySpan<char> s, string? original, [MaybeNullWhen(false)] out ResourceIdentifier result)
     {
-        if (!ServiceResourceHelper.ResourceIdentifierRegex().IsMatch(s))
-        {
-            result = null;
-            return false;
-        }
-
         result = new ResourceIdentifier(original ?? new string(s));
         return true;
     }

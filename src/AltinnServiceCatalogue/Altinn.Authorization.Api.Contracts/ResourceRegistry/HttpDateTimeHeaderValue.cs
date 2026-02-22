@@ -2,7 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
-using Altinn.ResourceRegistry.Core.Extensions;
 
 namespace Altinn.ResourceRegistry.Core.Models;
 
@@ -38,7 +37,7 @@ public readonly struct HttpDateTimeHeaderValue
     /// <param name="value">The value.</param>
     public HttpDateTimeHeaderValue(DateTimeOffset value)
     {
-        _value = value.ToOffset(TimeSpan.Zero).RoundDown(Precision);
+        _value = value.ToOffset(TimeSpan.Zero);
     }
 
     /// <inheritdoc/>

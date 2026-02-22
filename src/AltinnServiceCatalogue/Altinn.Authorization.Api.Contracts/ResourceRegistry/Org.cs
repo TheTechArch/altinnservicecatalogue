@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace Altinn.ResourceRegistry.Core.Models
+﻿namespace Altinn.ResourceRegistry.Core.Models
 {
     /// <summary>
     /// Describes an organization
@@ -10,7 +8,6 @@ namespace Altinn.ResourceRegistry.Core.Models
         /// <summary>
         /// Name of organization. With lanugage support
         /// </summary>
-        [JsonProperty("name")]
         public IReadOnlyDictionary<string, string> Name { get; set; } = new Dictionary<string, string>();
 
         /// <summary>

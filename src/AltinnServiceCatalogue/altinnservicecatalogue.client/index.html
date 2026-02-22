@@ -5,6 +5,15 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>altinnservicecatalogue.client</title>
+    <!-- Tailwind CDN fallback for quick preview when local build/CSS might not be loaded -->
+    <script>
+      if (typeof __vite_dev_server__ === 'undefined') {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.tailwindcss.com';
+        s.defer = true;
+        document.head.appendChild(s);
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="Altinn.Authorization.Api.Contracts/Altinn.Authorization.Api.Contracts.csproj" />
+  <Project Path="altinnservicecatalogue.client/altinnservicecatalogue.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="AltinnServiceCatalogue.Server/AltinnServiceCatalogue.Server.csproj" />
+</Solution>

@@ -8,3 +8,5 @@
 /src/AltinnServiceCatalogue/AltinnServiceCatalogue.Server/obj
 /src/AltinnServiceCatalogue/altinnservicecatalogue.client/obj/Debug
 /src/AltinnServiceCatalogue/Altinn.Authorization.Api.Contracts/obj
+/src/AltinnServiceCatalogue/.vs
+/src/AltinnServiceCatalogue/altinnservicecatalogue.client/package-lock.json

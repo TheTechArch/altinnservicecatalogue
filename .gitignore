@@ -1,0 +1,8 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/src/AltinnServiceCatalogue/Altinn.Authorization.Api.Contracts/bin/Debug/net10.0
+/src/AltinnServiceCatalogue/.vs/AltinnServiceCatalogue.slnx
+/src/AltinnServiceCatalogue/AltinnServiceCatalogue.Server/bin/Debug/net10.0
+/src/AltinnServiceCatalogue/AltinnServiceCatalogue.Server/obj

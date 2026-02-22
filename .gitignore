@@ -6,3 +6,5 @@
 /src/AltinnServiceCatalogue/.vs/AltinnServiceCatalogue.slnx
 /src/AltinnServiceCatalogue/AltinnServiceCatalogue.Server/bin/Debug/net10.0
 /src/AltinnServiceCatalogue/AltinnServiceCatalogue.Server/obj
+/src/AltinnServiceCatalogue/altinnservicecatalogue.client/obj/Debug
+/src/AltinnServiceCatalogue/Altinn.Authorization.Api.Contracts/obj

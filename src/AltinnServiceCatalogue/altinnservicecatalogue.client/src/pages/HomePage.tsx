@@ -13,7 +13,7 @@ import {
   Tabs,
   Tag,
 } from '@digdir/designsystemet-react';
-import type { Org, OrgList, ServiceResource } from '../types';
+import type { Org, OrgList, ServiceResource, AreaGroupDto } from '../types';
 import { getText, OrgLogo } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
@@ -32,6 +32,12 @@ export default function HomePage() {
   const [resources, setResources] = useState<ServiceResource[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
   const [errorTypes, setErrorTypes] = useState<string | null>(null);
+
+  // Access packages tab state
+  const [groups, setGroups] = useState<AreaGroupDto[]>([]);
+  const [loadingPackages, setLoadingPackages] = useState(true);
+  const [errorPackages, setErrorPackages] = useState<string | null>(null);
+  const [packageSearch, setPackageSearch] = useState('');
 
   // Fetch orgs
   useEffect(() => {
@@ -72,6 +78,47 @@ export default function HomePage() {
         setLoadingTypes(false);
       });
   }, [env]);
+
+  // Fetch access packages export
+  useEffect(() => {
+    setLoadingPackages(true);
+    setErrorPackages(null);
+    fetch(`/api/v1/${env}/meta/info/accesspackages/export`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to fetch packages: ${res.status}`);
+        return res.json() as Promise<AreaGroupDto[]>;
+      })
+      .then((data) => {
+        setGroups(data);
+      })
+      .catch((err) => {
+        setErrorPackages(err.message);
+      })
+      .finally(() => {
+        setLoadingPackages(false);
+      });
+  }, [env]);
+
+  // Filter groups/areas/packages by search
+  const filteredGroups = useMemo(() => {
+    if (!packageSearch) return groups;
+    const q = packageSearch.toLowerCase();
+    return groups
+      .map((g) => ({
+        ...g,
+        areas: (g.areas ?? [])
+          .map((a) => ({
+            ...a,
+            packages: (a.packages ?? []).filter(
+              (p) =>
+                p.name.toLowerCase().includes(q) ||
+                p.description?.toLowerCase().includes(q),
+            ),
+          }))
+          .filter((a) => a.packages.length > 0 || a.name.toLowerCase().includes(q)),
+      }))
+      .filter((g) => g.areas.length > 0);
+  }, [groups, packageSearch]);
 
   const sortedOrgs = useMemo(() => {
     return Object.entries(orgs)
@@ -231,12 +278,98 @@ export default function HomePage() {
           </div>
         </Tabs.Panel>
 
-        {/* Tab: Access packages (placeholder) */}
+        {/* Tab: Access packages */}
         <Tabs.Panel value="accessPackages">
           <div className="pt-6">
-            <Paragraph className="text-center py-16 text-gray-500">
-              {t('home.tabs.comingSoon')}
-            </Paragraph>
+            {/* Search */}
+            <section className="max-w-lg mx-auto mb-8">
+              <Search>
+                <SearchInput
+                  aria-label={t('packages.search.aria')}
+                  placeholder={t('packages.search.placeholder')}
+                  value={packageSearch}
+                  onChange={(e) => setPackageSearch(e.target.value)}
+                />
+                <SearchClear onClick={() => setPackageSearch('')} />
+              </Search>
+            </section>
+
+            {loadingPackages && (
+              <div className="flex justify-center py-20">
+                <Spinner aria-label={t('loading')} data-size="lg" />
+              </div>
+            )}
+
+            {errorPackages && (
+              <Alert data-color="danger" className="mb-6">
+                {t('error.loadData')}: {errorPackages}
+              </Alert>
+            )}
+
+            {!loadingPackages && !errorPackages && filteredGroups.length === 0 && packageSearch && (
+              <Paragraph className="text-center py-16 text-gray-500">
+                {t('packages.noMatch')}
+              </Paragraph>
+            )}
+
+            {!loadingPackages && !errorPackages && filteredGroups.map((group) => (
+              <section key={group.id} className="mb-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <Heading level={3} data-size="sm">
+                    {group.name}
+                  </Heading>
+                  <Tag data-size="sm" data-color="neutral">{group.type}</Tag>
+                </div>
+
+                {(group.areas ?? []).map((area) => (
+                  <div key={area.id} className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      {area.iconUrl && (
+                        <img src={area.iconUrl} alt="" className="w-6 h-6" />
+                      )}
+                      <Heading level={4} data-size="xs">
+                        {area.name}
+                      </Heading>
+                      <Tag data-size="sm" data-color="neutral">
+                        {(area.packages ?? []).length} {t('packages.packages')}
+                      </Tag>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 ml-8">
+                      {(area.packages ?? []).map((pkg) => (
+                        <Link
+                          key={pkg.id}
+                          to={`/package/${pkg.id}`}
+                          state={{ pkg }}
+                          className="no-underline"
+                        >
+                          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                            <CardBlock className="p-4 flex flex-col gap-2">
+                              <Heading level={5} data-size="2xs">
+                                {pkg.name}
+                              </Heading>
+                              {pkg.description && (
+                                <Paragraph data-size="sm" className="text-gray-600 line-clamp-2">
+                                  {pkg.description}
+                                </Paragraph>
+                              )}
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                <Tag
+                                  data-size="sm"
+                                  data-color={pkg.isDelegable ? 'success' : 'neutral'}
+                                >
+                                  {pkg.isDelegable ? t('packages.delegable') : t('packages.notDelegable')}
+                                </Tag>
+                              </div>
+                            </CardBlock>
+                          </Card>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </section>
+            ))}
           </div>
         </Tabs.Panel>
 

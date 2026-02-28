@@ -86,6 +86,21 @@ const translations: Record<string, Record<Lang, string>> = {
   'resource.spatial': { nb: 'Geografisk dekning', en: 'Spatial coverage' },
   'resource.thematicAreas': { nb: 'Tematiske områder', en: 'Thematic areas' },
 
+  // AccessPackages (HomePage tab + PackagePage)
+  'packages.search.placeholder': { nb: 'Søk i tilgangspakker...', en: 'Search access packages...' },
+  'packages.search.aria': { nb: 'Søk i tilgangspakker', en: 'Search access packages' },
+  'packages.noMatch': { nb: 'Ingen tilgangspakker samsvarer med søket ditt.', en: 'No access packages match your search.' },
+  'packages.packages': { nb: 'tilgangspakker', en: 'access packages' },
+  'packages.back': { nb: 'Tilbake til tilgangspakker', en: 'Back to access packages' },
+  'packages.notFound': { nb: 'Fant ikke tilgangspakke', en: 'Access package not found' },
+  'packages.delegable': { nb: 'Delegerbar', en: 'Delegable' },
+  'packages.notDelegable': { nb: 'Ikke delegerbar', en: 'Not delegable' },
+  'packages.services': { nb: 'Tjenester i denne pakken', en: 'Services in this package' },
+  'packages.noServices': { nb: 'Ingen tjenester i denne pakken.', en: 'No services in this package.' },
+  'packages.area': { nb: 'Område', en: 'Area' },
+  'packages.group': { nb: 'Kategori', en: 'Category' },
+  'packages.urn': { nb: 'URN', en: 'URN' },
+
   // Common
   'yes': { nb: 'Ja', en: 'Yes' },
   'no': { nb: 'Nei', en: 'No' },

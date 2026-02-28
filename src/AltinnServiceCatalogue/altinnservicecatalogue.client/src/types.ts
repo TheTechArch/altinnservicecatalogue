@@ -68,3 +68,75 @@ export interface ServiceResource {
   isOneTimeConsent: boolean;
   versionId: number;
 }
+
+// Access Management Metadata types
+
+export interface MetaProviderType {
+  id: string;
+  name: string;
+}
+
+export interface MetaResourceType {
+  id: string;
+  name: string;
+}
+
+export interface MetaProvider {
+  id: string;
+  name: string;
+  refId?: string;
+  logoUrl?: string;
+  code?: string;
+  typeId?: string;
+  type?: MetaProviderType;
+}
+
+export interface MetaType {
+  id: string;
+  providerId?: string;
+  name: string;
+  provider?: MetaProvider;
+}
+
+export interface MetaResource {
+  id: string;
+  providerId?: string;
+  typeId?: string;
+  name: string;
+  description?: string;
+  refId: string;
+  provider?: MetaProvider;
+  type?: MetaResourceType;
+}
+
+export interface PackageDto {
+  id: string;
+  name: string;
+  urn: string;
+  description: string;
+  isDelegable: boolean;
+  isAssignable: boolean;
+  isResourcePolicyAvailable: boolean;
+  area?: AreaDto;
+  type?: MetaType;
+  resources?: MetaResource[];
+}
+
+export interface AreaDto {
+  id: string;
+  name: string;
+  urn: string;
+  description: string;
+  iconUrl?: string;
+  packages?: PackageDto[];
+  group?: AreaGroupDto;
+}
+
+export interface AreaGroupDto {
+  id: string;
+  name: string;
+  urn: string;
+  description: string;
+  type: string;
+  areas?: AreaDto[];
+}

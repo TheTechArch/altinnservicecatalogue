@@ -16,9 +16,11 @@ import {
 import type { Org, OrgList, ServiceResource } from '../types';
 import { getText, OrgLogo } from '../helpers';
 import { useLang } from '../lang';
+import { useEnv } from '../env';
 
 export default function OrgPage() {
   const { lang, t } = useLang();
+  const { env } = useEnv();
   const { orgCode } = useParams<{ orgCode: string }>();
 
   const [org, setOrg] = useState<Org | null>(null);
@@ -30,7 +32,9 @@ export default function OrgPage() {
 
   // Fetch org info
   useEffect(() => {
-    fetch('/api/v1/tt02/resource/orgs')
+    setLoadingOrg(true);
+    setError(null);
+    fetch(`/api/v1/${env}/resource/orgs`)
       .then((res) => {
         if (!res.ok) throw new Error(`Failed to fetch orgs: ${res.status}`);
         return res.json() as Promise<OrgList>;
@@ -45,14 +49,15 @@ export default function OrgPage() {
       .finally(() => {
         setLoadingOrg(false);
       });
-  }, [orgCode]);
+  }, [orgCode, env]);
 
   // Fetch resources
   useEffect(() => {
     if (!orgCode) return;
 
     setLoadingResources(true);
-    fetch('/api/v1/tt02/resource/resourcelist')
+    setError(null);
+    fetch(`/api/v1/${env}/resource/resourcelist`)
       .then((res) => {
         if (!res.ok) throw new Error(`Failed to fetch resources: ${res.status}`);
         return res.json() as Promise<ServiceResource[]>;
@@ -69,7 +74,7 @@ export default function OrgPage() {
       .finally(() => {
         setLoadingResources(false);
       });
-  }, [orgCode]);
+  }, [orgCode, env]);
 
   const loading = loadingOrg || loadingResources;
 

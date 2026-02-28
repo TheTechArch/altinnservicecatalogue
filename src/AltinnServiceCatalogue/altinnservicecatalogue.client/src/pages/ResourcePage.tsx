@@ -13,6 +13,7 @@ import {
 import type { ServiceResource } from '../types';
 import { getText } from '../helpers';
 import { useLang } from '../lang';
+import { useEnv } from '../env';
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   if (!children) return null;
@@ -26,6 +27,7 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 
 export default function ResourcePage() {
   const { lang, t } = useLang();
+  const { env } = useEnv();
   const { id } = useParams<{ id: string }>();
 
   const [resource, setResource] = useState<ServiceResource | null>(null);
@@ -37,7 +39,7 @@ export default function ResourcePage() {
     setLoading(true);
     setError(null);
 
-    fetch(`/api/v1/tt02/resource/${encodeURIComponent(id)}`)
+    fetch(`/api/v1/${env}/resource/${encodeURIComponent(id)}`)
       .then((res) => {
         if (res.status === 404) {
           setResource(null);
@@ -55,7 +57,7 @@ export default function ResourcePage() {
       .finally(() => {
         setLoading(false);
       });
-  }, [id]);
+  }, [id, env]);
 
   if (loading) {
     return (

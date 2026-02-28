@@ -1,9 +1,11 @@
 import { Link, Outlet } from 'react-router-dom';
 import { Heading } from '@digdir/designsystemet-react';
 import { useLang } from '../lang';
+import { useEnv } from '../env';
 
 export default function Layout() {
   const { lang, setLang, t } = useLang();
+  const { env, setEnv } = useEnv();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -23,6 +25,24 @@ export default function Layout() {
                 {t('nav.about')}
               </a>
             </nav>
+            <div className="flex gap-1 items-center">
+              <button
+                onClick={() => setEnv('tt02')}
+                className={`text-xs font-medium px-2 py-1 rounded ${env === 'tt02' ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-500' : 'text-gray-500 hover:text-gray-800'}`}
+                aria-label="TT02"
+                title="Test environment (TT02)"
+              >
+                TT02
+              </button>
+              <button
+                onClick={() => setEnv('prod')}
+                className={`text-xs font-medium px-2 py-1 rounded ${env === 'prod' ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-500' : 'text-gray-500 hover:text-gray-800'}`}
+                aria-label="Prod"
+                title="Production environment"
+              >
+                PROD
+              </button>
+            </div>
             <div className="flex gap-1 items-center">
               <button
                 onClick={() => setLang('nb')}

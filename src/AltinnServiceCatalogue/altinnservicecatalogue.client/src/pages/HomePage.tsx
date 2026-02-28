@@ -14,16 +14,20 @@ import {
 import type { Org, OrgList } from '../types';
 import { getText, OrgLogo } from '../helpers';
 import { useLang } from '../lang';
+import { useEnv } from '../env';
 
 export default function HomePage() {
   const { lang, t } = useLang();
+  const { env } = useEnv();
   const [orgs, setOrgs] = useState<Record<string, Org>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    fetch('/api/v1/tt02/resource/orgs')
+    setLoading(true);
+    setError(null);
+    fetch(`/api/v1/${env}/resource/orgs`)
       .then((res) => {
         if (!res.ok) throw new Error(`Failed to fetch orgs: ${res.status}`);
         return res.json() as Promise<OrgList>;
@@ -37,7 +41,7 @@ export default function HomePage() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [env]);
 
   const sortedOrgs = useMemo(() => {
     return Object.entries(orgs)

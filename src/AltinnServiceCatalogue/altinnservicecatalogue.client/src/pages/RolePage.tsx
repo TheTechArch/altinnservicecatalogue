@@ -9,7 +9,7 @@ import {
   Card,
   CardBlock,
 } from '@digdir/designsystemet-react';
-import type { RoleDto, SubjectResourcesResponse } from '../types';
+import type { RoleDto, SubjectResourcesResponse, PolicyRule } from '../types';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
 
@@ -18,10 +18,30 @@ interface ResourceInfo {
   name: string;
 }
 
-/** Build the set of URNs to query for a role */
+/** Parse a URN like "urn:altinn:rolecode:dagl" into { type, value } */
+function parseUrn(urn: string): { type: string; value: string } {
+  const parts = urn.split(':');
+  return {
+    type: parts.slice(0, 3).join(':'),
+    value: parts.slice(3).join(':'),
+  };
+}
+
+/** Build all {type, value} matchers for a role's subjects in policy rules */
+function getRoleSubjectMatchers(role: RoleDto): { type: string; value: string }[] {
+  const matchers = [parseUrn(role.urn)];
+  if (role.legacyRoleCode) {
+    const legacyMatcher = { type: 'urn:altinn:rolecode', value: role.legacyRoleCode.toLowerCase() };
+    if (legacyMatcher.type !== matchers[0].type || legacyMatcher.value !== matchers[0].value) {
+      matchers.push(legacyMatcher);
+    }
+  }
+  return matchers;
+}
+
+/** Build the set of URNs to query bysubjects for a role */
 function getSubjectUrns(role: RoleDto): string[] {
   const urns = [role.urn];
-  // If role has a legacy URN (urn:altinn:rolecode:XXX), include it too
   if (role.legacyRoleCode) {
     const legacyUrn = `urn:altinn:rolecode:${role.legacyRoleCode.toLowerCase()}`;
     if (legacyUrn !== role.urn) {
@@ -30,6 +50,38 @@ function getSubjectUrns(role: RoleDto): string[] {
   }
   return urns;
 }
+
+/** Fetch policy rules for a resource and extract actions granted by a role */
+async function fetchActionsForRole(
+  env: string,
+  resourceRefId: string,
+  matchers: { type: string; value: string }[],
+): Promise<string[]> {
+  try {
+    const res = await fetch(`/api/v1/${env}/resource/${encodeURIComponent(resourceRefId)}/policy/rules`);
+    if (!res.ok) return [];
+    const rules: PolicyRule[] = await res.json();
+    const actions = rules
+      .filter((rule) =>
+        rule.subject.some((s) =>
+          matchers.some((m) => s.type === m.type && s.value === m.value),
+        ),
+      )
+      .map((rule) => rule.action.value);
+    return [...new Set(actions)];
+  } catch {
+    return [];
+  }
+}
+
+const ACTION_COLORS: Record<string, 'info' | 'success' | 'warning' | 'danger' | 'neutral'> = {
+  read: 'info',
+  write: 'success',
+  sign: 'warning',
+  confirmationrequired: 'neutral',
+};
+
+const BATCH_SIZE = 20;
 
 export default function RolePage() {
   const { t } = useLang();
@@ -45,6 +97,9 @@ export default function RolePage() {
 
   const [resources, setResources] = useState<ResourceInfo[]>([]);
   const [loadingResources, setLoadingResources] = useState(false);
+
+  // Map of resourceRefId -> actions granted by this role
+  const [actionMap, setActionMap] = useState<Record<string, string[]>>({});
 
   // Fetch role data if not passed via router state
   useEffect(() => {
@@ -87,7 +142,6 @@ export default function RolePage() {
         return res.json() as Promise<SubjectResourcesResponse>;
       })
       .then((data) => {
-        // Merge resources from all subject entries, dedup by value
         const seen = new Set<string>();
         const merged: ResourceInfo[] = [];
         for (const entry of data.data) {
@@ -108,6 +162,37 @@ export default function RolePage() {
         setLoadingResources(false);
       });
   }, [role, env]);
+
+  // Fetch policy rules for each resource in batches, updating progressively
+  useEffect(() => {
+    if (!role || resources.length === 0) return;
+
+    const matchers = getRoleSubjectMatchers(role);
+    let cancelled = false;
+
+    (async () => {
+      for (let i = 0; i < resources.length; i += BATCH_SIZE) {
+        if (cancelled) break;
+        const batch = resources.slice(i, i + BATCH_SIZE);
+        const results = await Promise.all(
+          batch.map(async (r) => {
+            const actions = await fetchActionsForRole(env, r.refId, matchers);
+            return [r.refId, actions] as const;
+          }),
+        );
+        if (cancelled) break;
+        setActionMap((prev) => {
+          const next = { ...prev };
+          for (const [refId, actions] of results) {
+            next[refId] = actions;
+          }
+          return next;
+        });
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [role, resources, env]);
 
   if (loading) {
     return (
@@ -244,21 +329,35 @@ export default function RolePage() {
 
         {!loadingResources && resources.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {resources.map((resource) => (
-              <Link
-                key={resource.refId}
-                to={`/resource/${encodeURIComponent(resource.refId)}`}
-                className="no-underline"
-              >
-                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                  <CardBlock className="p-5 flex flex-col gap-2">
-                    <Heading level={4} data-size="2xs">
-                      {resource.name}
-                    </Heading>
-                  </CardBlock>
-                </Card>
-              </Link>
-            ))}
+            {resources.map((resource) => {
+              const actions = actionMap[resource.refId] ?? [];
+              return (
+                <Link
+                  key={resource.refId}
+                  to={`/resource/${encodeURIComponent(resource.refId)}`}
+                  className="no-underline"
+                >
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                    <CardBlock className="p-5 flex flex-col gap-2">
+                      <Heading level={4} data-size="2xs">
+                        {resource.name}
+                      </Heading>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {actions.map((action) => (
+                          <Tag
+                            key={action}
+                            data-size="sm"
+                            data-color={ACTION_COLORS[action] ?? 'neutral'}
+                          >
+                            {action}
+                          </Tag>
+                        ))}
+                      </div>
+                    </CardBlock>
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>

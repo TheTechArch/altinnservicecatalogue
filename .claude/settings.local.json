@@ -23,7 +23,8 @@
       "Bash(curl -sv \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/skd_mva/policy/rules\")",
       "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/swagger/v1/swagger.json\")",
       "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/bysubjects\" -H \"Content-Type: application/json\" -d '[\"\"urn:altinn:rolecode:admai\"\"]')",
-      "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/bysubjects\" -H \"Content-Type: application/json\" -d '[\"\"urn:altinn:external-role:ccr:daglig-leder\"\"]')"
+      "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/bysubjects\" -H \"Content-Type: application/json\" -d '[\"\"urn:altinn:external-role:ccr:daglig-leder\"\"]')",
+      "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/aarsregnskap-correspondence/policy/rules\")"
     ],
     "additionalDirectories": [
       "\\tmp"

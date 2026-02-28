@@ -15,8 +15,10 @@ import {
 } from '@digdir/designsystemet-react';
 import type { Org, OrgList, ServiceResource } from '../types';
 import { getText, OrgLogo } from '../helpers';
+import { useLang } from '../lang';
 
 export default function OrgPage() {
+  const { lang, t } = useLang();
   const { orgCode } = useParams<{ orgCode: string }>();
 
   const [org, setOrg] = useState<Org | null>(null);
@@ -75,39 +77,39 @@ export default function OrgPage() {
     if (!searchQuery) return resources;
     const q = searchQuery.toLowerCase();
     return resources.filter((r) => {
-      const title = getText(r.title).toLowerCase();
-      const desc = getText(r.description).toLowerCase();
+      const title = getText(r.title, lang).toLowerCase();
+      const desc = getText(r.description, lang).toLowerCase();
       return title.includes(q) || desc.includes(q) || r.identifier.toLowerCase().includes(q);
     });
-  }, [resources, searchQuery]);
+  }, [resources, searchQuery, lang]);
 
   return (
     <>
       {/* Back */}
       <Link to="/">
         <Button variant="tertiary" data-size="sm" className="mb-4" asChild>
-          <span>&larr; Tilbake til alle etater</span>
+          <span>&larr; {t('org.back')}</span>
         </Button>
       </Link>
 
       {/* Loading */}
       {loading && (
         <div className="flex justify-center py-20">
-          <Spinner aria-label="Laster..." data-size="lg" />
+          <Spinner aria-label={t('loading')} data-size="lg" />
         </div>
       )}
 
       {/* Error */}
       {error && (
         <Alert data-color="danger" className="mb-6">
-          Kunne ikke laste data: {error}
+          {t('error.loadData')}: {error}
         </Alert>
       )}
 
       {/* Org not found */}
       {!loadingOrg && !org && !error && (
         <Alert data-color="warning" className="mb-6">
-          Fant ikke etat med kode &laquo;{orgCode}&raquo;.
+          {t('org.notFound')} &laquo;{orgCode}&raquo;.
         </Alert>
       )}
 
@@ -119,12 +121,12 @@ export default function OrgPage() {
             <div className="flex items-center gap-4">
               {org.logo && (
                 <div className="w-14 h-14 flex items-center justify-center rounded-full bg-gray-100 overflow-hidden flex-shrink-0">
-                  <OrgLogo src={org.logo} alt={getText(org.name)} fallback={orgCode!} />
+                  <OrgLogo src={org.logo} alt={getText(org.name, lang)} fallback={orgCode!} />
                 </div>
               )}
               <div>
                 <Heading level={2} data-size="lg">
-                  {getText(org.name)}
+                  {getText(org.name, lang)}
                 </Heading>
                 {org.homepage && (
                   <a
@@ -144,8 +146,8 @@ export default function OrgPage() {
           <section className="max-w-lg mb-8">
             <Search>
               <SearchInput
-                aria-label="Søk i tjenester"
-                placeholder="Søk i tjenester..."
+                aria-label={t('org.search.aria')}
+                placeholder={t('org.search.placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -156,7 +158,7 @@ export default function OrgPage() {
           {/* Resource count */}
           <div className="mb-6">
             <Heading level={3} data-size="sm">
-              Tjenester ({filteredResources.length})
+              {t('org.services')} ({filteredResources.length})
             </Heading>
           </div>
 
@@ -164,8 +166,8 @@ export default function OrgPage() {
           {filteredResources.length === 0 ? (
             <Paragraph className="text-center py-16 text-gray-500">
               {resources.length === 0
-                ? 'Denne etaten har ingen registrerte tjenester.'
-                : 'Ingen tjenester samsvarer med søket ditt.'}
+                ? t('org.noServices')
+                : t('org.noMatch')}
             </Paragraph>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -178,10 +180,10 @@ export default function OrgPage() {
                   <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                     <CardBlock className="p-5 flex flex-col gap-2">
                       <Heading level={4} data-size="2xs">
-                        {getText(resource.title)}
+                        {getText(resource.title, lang)}
                       </Heading>
                       <Paragraph data-size="sm" className="text-gray-600 line-clamp-3">
-                        {getText(resource.description)}
+                        {getText(resource.description, lang)}
                       </Paragraph>
                       <div className="flex flex-wrap gap-2 mt-2">
                         <Tag data-size="sm" variant="outline">

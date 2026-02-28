@@ -7,7 +7,8 @@
       "Bash(xargs grep -l \"AccessList\")",
       "Bash(dotnet build AltinnServiceCatalogue.Server/AltinnServiceCatalogue.Server.csproj)",
       "Bash(npx tsc -b --noEmit)",
-      "Bash(npm install react-router-dom)"
+      "Bash(npm install react-router-dom)",
+      "Bash(npx tsc --noEmit)"
     ]
   }
 }

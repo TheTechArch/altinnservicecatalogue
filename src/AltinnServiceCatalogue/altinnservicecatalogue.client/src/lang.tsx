@@ -1,0 +1,113 @@
+import { createContext, useContext, useState, type ReactNode } from 'react';
+
+export type Lang = 'nb' | 'en';
+
+interface LangContextValue {
+  lang: Lang;
+  setLang: (lang: Lang) => void;
+  t: (key: string) => string;
+}
+
+const translations: Record<string, Record<Lang, string>> = {
+  // Layout
+  'nav.home': { nb: 'Hjem', en: 'Home' },
+  'nav.about': { nb: 'Om', en: 'About' },
+  'app.title': { nb: 'Tjenestekatalogen', en: 'Service Catalogue' },
+
+  // HomePage
+  'home.hero.title': { nb: 'Finn offentlige digitale tjenester', en: 'Find public digital services' },
+  'home.hero.subtitle': {
+    nb: 'Utforsk tjenester fra over 60 offentlige etater. Velg en tjenesteeier for å se deres tjenester.',
+    en: 'Explore services from over 60 public agencies. Select a service owner to see their services.',
+  },
+  'home.search.placeholder': { nb: 'Søk etter etat...', en: 'Search for agency...' },
+  'home.search.aria': { nb: 'Søk etter etat', en: 'Search for agency' },
+  'home.serviceOwners': { nb: 'Tjenesteeiere', en: 'Service owners' },
+  'home.noMatch': { nb: 'Ingen etater samsvarer med søket ditt.', en: 'No agencies match your search.' },
+
+  // OrgPage
+  'org.back': { nb: 'Tilbake til alle etater', en: 'Back to all agencies' },
+  'org.notFound': { nb: 'Fant ikke etat med kode', en: 'Agency not found with code' },
+  'org.services': { nb: 'Tjenester', en: 'Services' },
+  'org.search.placeholder': { nb: 'Søk i tjenester...', en: 'Search services...' },
+  'org.search.aria': { nb: 'Søk i tjenester', en: 'Search services' },
+  'org.noServices': { nb: 'Denne etaten har ingen registrerte tjenester.', en: 'This agency has no registered services.' },
+  'org.noMatch': { nb: 'Ingen tjenester samsvarer med søket ditt.', en: 'No services match your search.' },
+
+  // ResourcePage
+  'resource.back': { nb: 'Tilbake', en: 'Back' },
+  'resource.notFound': { nb: 'Fant ikke ressurs med id', en: 'Resource not found with id' },
+  'resource.delegable': { nb: 'Delegerbar', en: 'Delegable' },
+  'resource.notVisible': { nb: 'Ikke synlig', en: 'Not visible' },
+  'resource.description': { nb: 'Beskrivelse', en: 'Description' },
+  'resource.rightDescription': { nb: 'Rettighetsbeskrivelse', en: 'Rights description' },
+  'resource.serviceOwner': { nb: 'Tjenesteeier', en: 'Service owner' },
+  'resource.name': { nb: 'Navn', en: 'Name' },
+  'resource.orgCode': { nb: 'Orgkode', en: 'Org code' },
+  'resource.orgNumber': { nb: 'Organisasjonsnummer', en: 'Organization number' },
+  'resource.technicalDetails': { nb: 'Tekniske detaljer', en: 'Technical details' },
+  'resource.identifier': { nb: 'Identifikator', en: 'Identifier' },
+  'resource.resourceType': { nb: 'Ressurstype', en: 'Resource type' },
+  'resource.status': { nb: 'Status', en: 'Status' },
+  'resource.version': { nb: 'Versjon', en: 'Version' },
+  'resource.versionId': { nb: 'Versjon-ID', en: 'Version ID' },
+  'resource.accessListMode': { nb: 'Tilgangsliste-modus', en: 'Access list mode' },
+  'resource.delegableLabel': { nb: 'Delegerbar', en: 'Delegable' },
+  'resource.visible': { nb: 'Synlig', en: 'Visible' },
+  'resource.selfIdentified': { nb: 'Selvidentifiserte brukere', en: 'Self-identified users' },
+  'resource.enterpriseUsers': { nb: 'Virksomhetsbrukere', en: 'Enterprise users' },
+  'resource.oneTimeConsent': { nb: 'Engangssamtykke', en: 'One-time consent' },
+  'resource.homepage': { nb: 'Hjemmeside', en: 'Homepage' },
+  'resource.partOf': { nb: 'Del av', en: 'Part of' },
+  'resource.availableFor': { nb: 'Tilgjengelig for', en: 'Available for' },
+  'resource.references': { nb: 'Ressursreferanser', en: 'Resource references' },
+  'resource.authReferences': { nb: 'Autorisasjonsreferanser', en: 'Authorization references' },
+  'resource.contactPoints': { nb: 'Kontaktpunkter', en: 'Contact points' },
+  'resource.category': { nb: 'Kategori', en: 'Category' },
+  'resource.email': { nb: 'E-post', en: 'Email' },
+  'resource.phone': { nb: 'Telefon', en: 'Phone' },
+  'resource.contactPage': { nb: 'Kontaktside', en: 'Contact page' },
+  'resource.keywords': { nb: 'Nøkkelord', en: 'Keywords' },
+  'resource.spatial': { nb: 'Geografisk dekning', en: 'Spatial coverage' },
+  'resource.thematicAreas': { nb: 'Tematiske områder', en: 'Thematic areas' },
+
+  // Common
+  'yes': { nb: 'Ja', en: 'Yes' },
+  'no': { nb: 'Nei', en: 'No' },
+  'loading': { nb: 'Laster...', en: 'Loading...' },
+  'error.loadOrgs': { nb: 'Kunne ikke laste etater', en: 'Could not load agencies' },
+  'error.loadData': { nb: 'Kunne ikke laste data', en: 'Could not load data' },
+  'error.loadResource': { nb: 'Kunne ikke laste ressurs', en: 'Could not load resource' },
+};
+
+const LangContext = createContext<LangContextValue | null>(null);
+
+export function LangProvider({ children }: { children: ReactNode }) {
+  const [lang, setLangState] = useState<Lang>(() => {
+    const saved = localStorage.getItem('lang');
+    return saved === 'en' ? 'en' : 'nb';
+  });
+
+  const setLang = (newLang: Lang) => {
+    setLangState(newLang);
+    localStorage.setItem('lang', newLang);
+  };
+
+  const t = (key: string): string => {
+    const entry = translations[key];
+    if (!entry) return key;
+    return entry[lang] || entry['nb'] || key;
+  };
+
+  return (
+    <LangContext.Provider value={{ lang, setLang, t }}>
+      {children}
+    </LangContext.Provider>
+  );
+}
+
+export function useLang() {
+  const ctx = useContext(LangContext);
+  if (!ctx) throw new Error('useLang must be used within LangProvider');
+  return ctx;
+}

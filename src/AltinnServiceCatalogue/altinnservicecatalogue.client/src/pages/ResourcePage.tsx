@@ -12,6 +12,7 @@ import {
 } from '@digdir/designsystemet-react';
 import type { ServiceResource } from '../types';
 import { getText } from '../helpers';
+import { useLang } from '../lang';
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   if (!children) return null;
@@ -23,29 +24,8 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
   );
 }
 
-function MultiLangBlock({ label, dict }: { label: string; dict?: Record<string, string> | null }) {
-  if (!dict || Object.keys(dict).length === 0) return null;
-
-  const langNames: Record<string, string> = { nb: 'Bokmål', nn: 'Nynorsk', en: 'English' };
-
-  return (
-    <section className="mb-8">
-      <Heading level={3} data-size="xs" className="mb-3">
-        {label}
-      </Heading>
-      <div className="space-y-3">
-        {Object.entries(dict).map(([lang, text]) => (
-          <div key={lang}>
-            <span className="text-xs font-medium text-gray-400 uppercase">{langNames[lang] || lang}</span>
-            <Paragraph data-size="sm">{text}</Paragraph>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default function ResourcePage() {
+  const { lang, t } = useLang();
   const { id } = useParams<{ id: string }>();
 
   const [resource, setResource] = useState<ServiceResource | null>(null);
@@ -80,7 +60,7 @@ export default function ResourcePage() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Spinner aria-label="Laster ressurs..." data-size="lg" />
+        <Spinner aria-label={t('loading')} data-size="lg" />
       </div>
     );
   }
@@ -88,7 +68,7 @@ export default function ResourcePage() {
   if (error) {
     return (
       <Alert data-color="danger" className="mb-6">
-        Kunne ikke laste ressurs: {error}
+        {t('error.loadResource')}: {error}
       </Alert>
     );
   }
@@ -98,39 +78,40 @@ export default function ResourcePage() {
       <>
         <Link to="/">
           <Button variant="tertiary" data-size="sm" className="mb-4" asChild>
-            <span>&larr; Tilbake</span>
+            <span>&larr; {t('resource.back')}</span>
           </Button>
         </Link>
-        <Alert data-color="warning">Fant ikke ressurs med id &laquo;{id}&raquo;.</Alert>
+        <Alert data-color="warning">{t('resource.notFound')} &laquo;{id}&raquo;.</Alert>
       </>
     );
   }
 
   const orgCode = resource.hasCompetentAuthority?.orgcode?.toLowerCase();
+  const yesNo = (val: boolean | undefined) => (val ? t('yes') : t('no'));
 
   return (
     <>
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
         <Link to="/" className="hover:underline">
-          Hjem
+          {t('nav.home')}
         </Link>
         <span>/</span>
         {orgCode && (
           <>
             <Link to={`/org/${orgCode}`} className="hover:underline">
-              {getText(resource.hasCompetentAuthority?.name)}
+              {getText(resource.hasCompetentAuthority?.name, lang)}
             </Link>
             <span>/</span>
           </>
         )}
-        <span className="text-gray-900 truncate max-w-xs">{getText(resource.title)}</span>
+        <span className="text-gray-900 truncate max-w-xs">{getText(resource.title, lang)}</span>
       </nav>
 
       {/* Title + status tags */}
       <section className="mb-8">
         <Heading level={2} data-size="lg" className="mb-3">
-          {getText(resource.title)}
+          {getText(resource.title, lang)}
         </Heading>
         <div className="flex flex-wrap gap-2">
           <Tag data-size="sm" variant="outline">
@@ -143,37 +124,53 @@ export default function ResourcePage() {
           )}
           {resource.delegable && (
             <Tag data-size="sm" data-color="info">
-              Delegerbar
+              {t('resource.delegable')}
             </Tag>
           )}
           {!resource.visible && (
             <Tag data-size="sm" data-color="warning">
-              Ikke synlig
+              {t('resource.notVisible')}
             </Tag>
           )}
         </div>
       </section>
 
-      {/* Description sections */}
-      <MultiLangBlock label="Beskrivelse" dict={resource.description} />
-      <MultiLangBlock label="Rettighetsbeskrivelse" dict={resource.rightDescription} />
+      {/* Description */}
+      {getText(resource.description, lang) && (
+        <section className="mb-8">
+          <Heading level={3} data-size="xs" className="mb-3">
+            {t('resource.description')}
+          </Heading>
+          <Paragraph data-size="sm">{getText(resource.description, lang)}</Paragraph>
+        </section>
+      )}
+
+      {/* Rights description */}
+      {getText(resource.rightDescription, lang) && (
+        <section className="mb-8">
+          <Heading level={3} data-size="xs" className="mb-3">
+            {t('resource.rightDescription')}
+          </Heading>
+          <Paragraph data-size="sm">{getText(resource.rightDescription, lang)}</Paragraph>
+        </section>
+      )}
 
       {/* Competent Authority */}
       <Card className="mb-8">
         <CardBlock className="p-5">
           <Heading level={3} data-size="xs" className="mb-3">
-            Tjenesteeier
+            {t('resource.serviceOwner')}
           </Heading>
           <dl>
-            <DetailRow label="Navn">{getText(resource.hasCompetentAuthority?.name)}</DetailRow>
-            <DetailRow label="Orgkode">
+            <DetailRow label={t('resource.name')}>{getText(resource.hasCompetentAuthority?.name, lang)}</DetailRow>
+            <DetailRow label={t('resource.orgCode')}>
               {orgCode && (
                 <Link to={`/org/${orgCode}`} className="text-blue-600 hover:underline">
                   {resource.hasCompetentAuthority?.orgcode}
                 </Link>
               )}
             </DetailRow>
-            <DetailRow label="Organisasjonsnummer">
+            <DetailRow label={t('resource.orgNumber')}>
               {resource.hasCompetentAuthority?.organization}
             </DetailRow>
           </dl>
@@ -184,26 +181,26 @@ export default function ResourcePage() {
       <Card className="mb-8">
         <CardBlock className="p-5">
           <Heading level={3} data-size="xs" className="mb-3">
-            Tekniske detaljer
+            {t('resource.technicalDetails')}
           </Heading>
           <dl>
-            <DetailRow label="Identifikator">{resource.identifier}</DetailRow>
-            <DetailRow label="Ressurstype">{resource.resourceType}</DetailRow>
-            <DetailRow label="Status">{resource.status}</DetailRow>
-            <DetailRow label="Versjon">{resource.version}</DetailRow>
-            <DetailRow label="Versjon-ID">{resource.versionId}</DetailRow>
-            <DetailRow label="Tilgangsliste-modus">{resource.accessListMode}</DetailRow>
-            <DetailRow label="Delegerbar">{resource.delegable ? 'Ja' : 'Nei'}</DetailRow>
-            <DetailRow label="Synlig">{resource.visible ? 'Ja' : 'Nei'}</DetailRow>
-            <DetailRow label="Selvidentifiserte brukere">
-              {resource.selfIdentifiedUserEnabled ? 'Ja' : 'Nei'}
+            <DetailRow label={t('resource.identifier')}>{resource.identifier}</DetailRow>
+            <DetailRow label={t('resource.resourceType')}>{resource.resourceType}</DetailRow>
+            <DetailRow label={t('resource.status')}>{resource.status}</DetailRow>
+            <DetailRow label={t('resource.version')}>{resource.version}</DetailRow>
+            <DetailRow label={t('resource.versionId')}>{resource.versionId}</DetailRow>
+            <DetailRow label={t('resource.accessListMode')}>{resource.accessListMode}</DetailRow>
+            <DetailRow label={t('resource.delegableLabel')}>{yesNo(resource.delegable)}</DetailRow>
+            <DetailRow label={t('resource.visible')}>{yesNo(resource.visible)}</DetailRow>
+            <DetailRow label={t('resource.selfIdentified')}>
+              {yesNo(resource.selfIdentifiedUserEnabled)}
             </DetailRow>
-            <DetailRow label="Virksomhetsbrukere">
-              {resource.enterpriseUserEnabled ? 'Ja' : 'Nei'}
+            <DetailRow label={t('resource.enterpriseUsers')}>
+              {yesNo(resource.enterpriseUserEnabled)}
             </DetailRow>
-            <DetailRow label="Engangssamtykke">{resource.isOneTimeConsent ? 'Ja' : 'Nei'}</DetailRow>
+            <DetailRow label={t('resource.oneTimeConsent')}>{yesNo(resource.isOneTimeConsent)}</DetailRow>
             {resource.homepage && (
-              <DetailRow label="Hjemmeside">
+              <DetailRow label={t('resource.homepage')}>
                 <a
                   href={resource.homepage}
                   target="_blank"
@@ -214,7 +211,7 @@ export default function ResourcePage() {
                 </a>
               </DetailRow>
             )}
-            {resource.isPartOf && <DetailRow label="Del av">{resource.isPartOf}</DetailRow>}
+            {resource.isPartOf && <DetailRow label={t('resource.partOf')}>{resource.isPartOf}</DetailRow>}
           </dl>
         </CardBlock>
       </Card>
@@ -224,7 +221,7 @@ export default function ResourcePage() {
         <Card className="mb-8">
           <CardBlock className="p-5">
             <Heading level={3} data-size="xs" className="mb-3">
-              Tilgjengelig for
+              {t('resource.availableFor')}
             </Heading>
             <div className="flex flex-wrap gap-2">
               {resource.availableForType.map((type) => (
@@ -242,7 +239,7 @@ export default function ResourcePage() {
         <Card className="mb-8">
           <CardBlock className="p-5">
             <Heading level={3} data-size="xs" className="mb-3">
-              Ressursreferanser
+              {t('resource.references')}
             </Heading>
             <div className="space-y-2">
               {resource.resourceReferences.map((ref, i) => (
@@ -270,7 +267,7 @@ export default function ResourcePage() {
         <Card className="mb-8">
           <CardBlock className="p-5">
             <Heading level={3} data-size="xs" className="mb-3">
-              Autorisasjonsreferanser
+              {t('resource.authReferences')}
             </Heading>
             <div className="space-y-2">
               {resource.authorizationReference.map((ref, i) => (
@@ -290,22 +287,22 @@ export default function ResourcePage() {
         <Card className="mb-8">
           <CardBlock className="p-5">
             <Heading level={3} data-size="xs" className="mb-3">
-              Kontaktpunkter
+              {t('resource.contactPoints')}
             </Heading>
             <div className="space-y-4">
               {resource.contactPoints.map((cp, i) => (
                 <dl key={i}>
-                  {cp.category && <DetailRow label="Kategori">{cp.category}</DetailRow>}
+                  {cp.category && <DetailRow label={t('resource.category')}>{cp.category}</DetailRow>}
                   {cp.email && (
-                    <DetailRow label="E-post">
+                    <DetailRow label={t('resource.email')}>
                       <a href={`mailto:${cp.email}`} className="text-blue-600 hover:underline">
                         {cp.email}
                       </a>
                     </DetailRow>
                   )}
-                  {cp.telephone && <DetailRow label="Telefon">{cp.telephone}</DetailRow>}
+                  {cp.telephone && <DetailRow label={t('resource.phone')}>{cp.telephone}</DetailRow>}
                   {cp.contactPage && (
-                    <DetailRow label="Kontaktside">
+                    <DetailRow label={t('resource.contactPage')}>
                       <a
                         href={cp.contactPage}
                         target="_blank"
@@ -328,7 +325,7 @@ export default function ResourcePage() {
         <Card className="mb-8">
           <CardBlock className="p-5">
             <Heading level={3} data-size="xs" className="mb-3">
-              Nøkkelord
+              {t('resource.keywords')}
             </Heading>
             <div className="flex flex-wrap gap-2">
               {resource.keywords.map((kw, i) => (
@@ -346,7 +343,7 @@ export default function ResourcePage() {
         <Card className="mb-8">
           <CardBlock className="p-5">
             <Heading level={3} data-size="xs" className="mb-3">
-              Geografisk dekning
+              {t('resource.spatial')}
             </Heading>
             <div className="flex flex-wrap gap-2">
               {resource.spatial.map((s) => (
@@ -364,12 +361,12 @@ export default function ResourcePage() {
         <Card className="mb-8">
           <CardBlock className="p-5">
             <Heading level={3} data-size="xs" className="mb-3">
-              Tematiske områder
+              {t('resource.thematicAreas')}
             </Heading>
             <div className="flex flex-wrap gap-2">
-              {resource.thematicAreas.map((t) => (
-                <Tag key={t} data-size="sm" variant="outline">
-                  {t}
+              {resource.thematicAreas.map((area) => (
+                <Tag key={area} data-size="sm" variant="outline">
+                  {area}
                 </Tag>
               ))}
             </div>

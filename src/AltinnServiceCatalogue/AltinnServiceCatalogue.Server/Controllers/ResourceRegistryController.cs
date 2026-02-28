@@ -11,6 +11,7 @@ namespace AltinnServiceCatalogue.Server.Controllers;
 [Route("api/v1/{environment}/resource")]
 public class ResourceRegistryController(
     IResourceRegistryClient client,
+    IResourceCacheService cacheService,
     IOptions<ResourceRegistryOptions> options,
     ILogger<ResourceRegistryController> logger) : ControllerBase
 {
@@ -213,6 +214,49 @@ public class ResourceRegistryController(
         catch (HttpRequestException ex)
         {
             logger.LogError(ex, "Upstream request failed for GetResourcePolicyRules({Id}) in {Environment}", id, environment);
+            return StatusCode(StatusCodes.Status502BadGateway, "Upstream service unavailable");
+        }
+    }
+
+    [HttpGet("keywords")]
+    [ProducesResponseType<List<string>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetKeywords(
+        [FromRoute] string environment,
+        CancellationToken ct)
+    {
+        if (!TryResolveBaseUrl(environment, out var baseUrl))
+            return BadRequest($"Unknown environment: {environment}");
+
+        try
+        {
+            var result = await cacheService.GetKeywordsAsync(baseUrl, ct);
+            return Ok(result);
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Failed to fetch keywords in {Environment}", environment);
+            return StatusCode(StatusCodes.Status502BadGateway, "Upstream service unavailable");
+        }
+    }
+
+    [HttpGet("bykeyword/{keyword}")]
+    [ProducesResponseType<List<ServiceResource>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetResourcesByKeyword(
+        [FromRoute] string environment,
+        [FromRoute] string keyword,
+        CancellationToken ct)
+    {
+        if (!TryResolveBaseUrl(environment, out var baseUrl))
+            return BadRequest($"Unknown environment: {environment}");
+
+        try
+        {
+            var result = await cacheService.GetResourcesByKeywordAsync(baseUrl, keyword, ct);
+            return Ok(result);
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Failed to fetch resources by keyword {Keyword} in {Environment}", keyword, environment);
             return StatusCode(StatusCodes.Status502BadGateway, "Upstream service unavailable");
         }
     }

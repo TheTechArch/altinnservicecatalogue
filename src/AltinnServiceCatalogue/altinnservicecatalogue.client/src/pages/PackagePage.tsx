@@ -153,7 +153,9 @@ export default function PackagePage() {
           {t('nav.home')}
         </Link>
         <span>/</span>
-        <span>{t('home.tabs.accessPackages')}</span>
+        <Link to="/packages" className="hover:underline">
+          {t('home.tabs.accessPackages')}
+        </Link>
         {pkg.area?.group && (
           <>
             <span>/</span>

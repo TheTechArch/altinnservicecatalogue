@@ -213,7 +213,7 @@ export default function RolePage() {
   if (!role) {
     return (
       <>
-        <Link to="/">
+        <Link to="/roles">
           <span className="text-sm text-blue-600 hover:underline">&larr; {t('roles.back')}</span>
         </Link>
         <Alert data-color="warning" className="mt-4">{t('roles.notFound')}</Alert>
@@ -229,7 +229,9 @@ export default function RolePage() {
           {t('nav.home')}
         </Link>
         <span>/</span>
-        <span>{t('home.tabs.roles')}</span>
+        <Link to="/roles" className="hover:underline">
+          {t('home.tabs.roles')}
+        </Link>
         {role.provider && (
           <>
             <span>/</span>

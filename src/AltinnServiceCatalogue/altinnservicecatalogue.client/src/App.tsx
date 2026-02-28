@@ -6,6 +6,7 @@ import ResourcePage from './pages/ResourcePage';
 import ResourceTypePage from './pages/ResourceTypePage';
 import PackagePage from './pages/PackagePage';
 import RolePage from './pages/RolePage';
+import KeywordPage from './pages/KeywordPage';
 import './App.css';
 
 function App() {
@@ -13,6 +14,12 @@ function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
+        <Route path="owners" element={<HomePage />} />
+        <Route path="types" element={<HomePage />} />
+        <Route path="packages" element={<HomePage />} />
+        <Route path="roles" element={<HomePage />} />
+        <Route path="keywords" element={<HomePage />} />
+        <Route path="keyword/:word" element={<KeywordPage />} />
         <Route path="org/:orgCode" element={<OrgPage />} />
         <Route path="type/:resourceType" element={<ResourceTypePage />} />
         <Route path="package/:packageId" element={<PackagePage />} />

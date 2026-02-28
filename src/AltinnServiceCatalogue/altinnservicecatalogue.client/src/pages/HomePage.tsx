@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Heading,
   Paragraph,
@@ -18,9 +18,30 @@ import { getText, OrgLogo } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
 
+const TAB_PATHS: Record<string, string> = {
+  '/': 'serviceOwner',
+  '/owners': 'serviceOwner',
+  '/types': 'resourceType',
+  '/packages': 'accessPackages',
+  '/roles': 'roles',
+  '/keywords': 'keywords',
+};
+
+const PATH_FOR_TAB: Record<string, string> = {
+  serviceOwner: '/owners',
+  resourceType: '/types',
+  accessPackages: '/packages',
+  roles: '/roles',
+  keywords: '/keywords',
+};
+
 export default function HomePage() {
   const { lang, t } = useLang();
   const { env } = useEnv();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const activeTab = TAB_PATHS[location.pathname] ?? 'serviceOwner';
 
   // Org tab state
   const [orgs, setOrgs] = useState<Record<string, Org>>({});
@@ -44,6 +65,12 @@ export default function HomePage() {
   const [loadingRoles, setLoadingRoles] = useState(true);
   const [errorRoles, setErrorRoles] = useState<string | null>(null);
   const [roleSearch, setRoleSearch] = useState('');
+
+  // Keywords tab state
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [loadingKeywords, setLoadingKeywords] = useState(true);
+  const [errorKeywords, setErrorKeywords] = useState<string | null>(null);
+  const [keywordSearch, setKeywordSearch] = useState('');
 
   // Fetch orgs
   useEffect(() => {
@@ -124,6 +151,32 @@ export default function HomePage() {
         setLoadingRoles(false);
       });
   }, [env]);
+
+  // Fetch keywords
+  useEffect(() => {
+    setLoadingKeywords(true);
+    setErrorKeywords(null);
+    fetch(`/api/v1/${env}/resource/keywords`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to fetch keywords: ${res.status}`);
+        return res.json() as Promise<string[]>;
+      })
+      .then((data) => {
+        setKeywords(data);
+      })
+      .catch((err) => {
+        setErrorKeywords(err.message);
+      })
+      .finally(() => {
+        setLoadingKeywords(false);
+      });
+  }, [env]);
+
+  const filteredKeywords = useMemo(() => {
+    if (!keywordSearch) return keywords;
+    const q = keywordSearch.toLowerCase();
+    return keywords.filter((kw) => kw.toLowerCase().includes(q));
+  }, [keywords, keywordSearch]);
 
   // Filter groups/areas/packages by search
   const filteredGroups = useMemo(() => {
@@ -215,12 +268,13 @@ export default function HomePage() {
       </section>
 
       {/* Tabs */}
-      <Tabs defaultValue="serviceOwner">
+      <Tabs value={activeTab} onChange={(val) => navigate(PATH_FOR_TAB[val] ?? '/')}>
         <Tabs.List>
           <Tabs.Tab value="serviceOwner">{t('home.tabs.serviceOwner')}</Tabs.Tab>
           <Tabs.Tab value="resourceType">{t('home.tabs.resourceType')}</Tabs.Tab>
           <Tabs.Tab value="accessPackages">{t('home.tabs.accessPackages')}</Tabs.Tab>
           <Tabs.Tab value="roles">{t('home.tabs.roles')}</Tabs.Tab>
+          <Tabs.Tab value="keywords">{t('home.tabs.keywords')}</Tabs.Tab>
         </Tabs.List>
 
         {/* Tab: Service owner */}
@@ -511,6 +565,64 @@ export default function HomePage() {
                 </div>
               </section>
             ))}
+          </div>
+        </Tabs.Panel>
+
+        {/* Tab: Keywords */}
+        <Tabs.Panel value="keywords">
+          <div className="pt-6">
+            <section className="max-w-lg mx-auto mb-8">
+              <Search>
+                <SearchInput
+                  aria-label={t('keywords.search.aria')}
+                  placeholder={t('keywords.search.placeholder')}
+                  value={keywordSearch}
+                  onChange={(e) => setKeywordSearch(e.target.value)}
+                />
+                <SearchClear onClick={() => setKeywordSearch('')} />
+              </Search>
+            </section>
+
+            {loadingKeywords && (
+              <div className="flex justify-center py-20">
+                <Spinner aria-label={t('loading')} data-size="lg" />
+              </div>
+            )}
+
+            {errorKeywords && (
+              <Alert data-color="danger" className="mb-6">
+                {t('error.loadData')}: {errorKeywords}
+              </Alert>
+            )}
+
+            {!loadingKeywords && !errorKeywords && filteredKeywords.length === 0 && keywordSearch && (
+              <Paragraph className="text-center py-16 text-gray-500">
+                {t('keywords.noMatch')}
+              </Paragraph>
+            )}
+
+            {!loadingKeywords && !errorKeywords && filteredKeywords.length > 0 && (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <Heading level={3} data-size="sm">
+                    {t('keywords.total')} ({filteredKeywords.length})
+                  </Heading>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {filteredKeywords.map((kw) => (
+                    <Link key={kw} to={`/keyword/${encodeURIComponent(kw)}`} className="no-underline">
+                      <Tag
+                        data-size="md"
+                        data-color="neutral"
+                        className="cursor-pointer hover:shadow-sm transition-shadow"
+                      >
+                        {kw}
+                      </Tag>
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </Tabs.Panel>
       </Tabs>

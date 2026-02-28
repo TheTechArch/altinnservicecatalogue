@@ -124,6 +124,19 @@ const translations: Record<string, Record<Lang, string>> = {
   'roles.services': { nb: 'Tjenester med denne rollen', en: 'Services with this role' },
   'roles.noServices': { nb: 'Ingen tjenester knyttet til denne rollen.', en: 'No services associated with this role.' },
 
+  // Keywords
+  'home.tabs.keywords': { nb: 'Nøkkelord', en: 'Keywords' },
+  'keywords.search.placeholder': { nb: 'Søk i nøkkelord...', en: 'Search keywords...' },
+  'keywords.search.aria': { nb: 'Søk i nøkkelord', en: 'Search keywords' },
+  'keywords.noMatch': { nb: 'Ingen nøkkelord samsvarer med søket ditt.', en: 'No keywords match your search.' },
+  'keywords.total': { nb: 'Nøkkelord', en: 'Keywords' },
+  'keyword.back': { nb: 'Tilbake til nøkkelord', en: 'Back to keywords' },
+  'keyword.services': { nb: 'Tjenester', en: 'Services' },
+  'keyword.noServices': { nb: 'Ingen tjenester med dette nøkkelordet.', en: 'No services with this keyword.' },
+  'keyword.search.placeholder': { nb: 'Søk i tjenester...', en: 'Search services...' },
+  'keyword.search.aria': { nb: 'Søk i tjenester', en: 'Search services' },
+  'keyword.noMatch': { nb: 'Ingen tjenester samsvarer med søket ditt.', en: 'No services match your search.' },
+
   // Common
   'yes': { nb: 'Ja', en: 'Yes' },
   'no': { nb: 'Nei', en: 'No' },

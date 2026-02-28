@@ -1,4 +1,4 @@
-﻿namespace Altinn.ResourceRegistry.Core.Models;
+﻿namespace Altinn.Authorization.Api.Contracts.ResourceRegistry;
 
 /// <summary>
 /// Model representation of Competent Authority part of the ServiceResource model

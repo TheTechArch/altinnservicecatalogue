@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Altinn.Swashbuckle.Examples;
 
-namespace Altinn.ResourceRegistry.Core.Models;
+namespace Altinn.Authorization.Api.Contracts.ResourceRegistry;
 
 /// <summary>
 /// A valid resource identifier.

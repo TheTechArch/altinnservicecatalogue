@@ -1,8 +1,9 @@
 ﻿#nullable enable
 
+using Altinn;
 using CommunityToolkit.Diagnostics;
 
-namespace Altinn.ResourceRegistry.Core.Models;
+namespace Altinn.Authorization.Api.Contracts.ResourceRegistry;
 
 /// <summary>
 /// An optional value (similar to <see cref="Nullable{T}"/>, but supports reference types and value types).

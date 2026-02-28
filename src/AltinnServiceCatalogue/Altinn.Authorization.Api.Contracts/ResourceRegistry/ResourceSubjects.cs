@@ -1,5 +1,7 @@
 ﻿#nullable enable
-namespace Altinn.ResourceRegistry.Core.Models
+using Altinn;
+
+namespace Altinn.Authorization.Api.Contracts.ResourceRegistry
 {
     /// <summary>
     /// All subjects for a given resource

@@ -2,7 +2,7 @@
 using System.Text.Json.Serialization;
 using Altinn.ResourceRegistry.Core.Enums;
 
-namespace Altinn.ResourceRegistry.Core.Models
+namespace Altinn.Authorization.Api.Contracts.ResourceRegistry
 {
     /// <summary>
     /// Model representation of the resource reference part of the ServiceResource model

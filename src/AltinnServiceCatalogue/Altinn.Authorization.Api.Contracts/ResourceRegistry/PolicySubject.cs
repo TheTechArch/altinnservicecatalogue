@@ -1,6 +1,6 @@
 ﻿using Altinn.Urn.Json;
 
-namespace Altinn.ResourceRegistry.Core.Models
+namespace Altinn.Authorization.Api.Contracts.ResourceRegistry
 {
     /// <summary>
     /// Defines a  Policy Subject

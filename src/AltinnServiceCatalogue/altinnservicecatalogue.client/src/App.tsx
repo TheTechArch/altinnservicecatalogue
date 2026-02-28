@@ -1,147 +1,188 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Heading,
+  Paragraph,
+  Search,
+  SearchInput,
+  SearchClear,
+  Card,
+  CardBlock,
+  Spinner,
+  Alert,
+  Tag,
+} from '@digdir/designsystemet-react';
 import './App.css';
 
-type Service = {
-  id: string;
-  name: string;
-  owner: string;
-  category: string;
-  accessPackage: string;
-  description: string;
-  url?: string;
-};
+interface Org {
+  name: Record<string, string>;
+  logo: string;
+  orgnr: string;
+  homepage: string;
+  environments: string[];
+}
 
-const SAMPLE_SERVICES: Service[] = [
-  {
-    id: 's1',
-    name: 'Citizen ID Registry',
-    owner: 'Digital Services Agency',
-    category: 'Identity',
-    accessPackage: 'Public',
-    description: 'Lookup and validate citizen identifiers for public services.',
-  },
-  {
-    id: 's2',
-    name: 'Business Register API',
-    owner: 'Commerce Dept',
-    category: 'Registry',
-    accessPackage: 'Restricted',
-    description: 'Search companies and retrieve registration data.',
-  },
-  {
-    id: 's3',
-    name: 'Payment Gateway',
-    owner: 'Finance Authority',
-    category: 'Payments',
-    accessPackage: 'Partner',
-    description: 'Process payments and refunds for public services.',
-  },
-  {
-    id: 's4',
-    name: 'Document Storage',
-    owner: 'Digital Services Agency',
-    category: 'Storage',
-    accessPackage: 'Partner',
-    description: 'Secure document storage for citizen submissions.',
-  },
-];
+interface OrgList {
+  orgs: Record<string, Org>;
+}
+
+function getOrgName(org: Org, lang = 'nb'): string {
+  return org.name[lang] || org.name['nb'] || org.name['nn'] || org.name['en'] || Object.values(org.name)[0] || '';
+}
+
+function getLogoUrl(orgCode: string, logo: string | null): string | null {
+  if (!logo) return null;
+  return `https://altinncdn.no/orgs/${orgCode}/${logo}`;
+}
 
 function App() {
-  const [owner, setOwner] = useState('');
-  const [category, setCategory] = useState('');
-  const [accessPackage, setAccessPackage] = useState('');
-  const [query, setQuery] = useState('');
+  const [orgs, setOrgs] = useState<Record<string, Org>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const owners = useMemo(() => Array.from(new Set(SAMPLE_SERVICES.map(s => s.owner))), []);
-  const categories = useMemo(() => Array.from(new Set(SAMPLE_SERVICES.map(s => s.category))), []);
-  const accessPackages = useMemo(() => Array.from(new Set(SAMPLE_SERVICES.map(s => s.accessPackage))), []);
+  useEffect(() => {
+    fetch('/api/v1/tt02/resource/orgs')
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to fetch orgs: ${res.status}`);
+        return res.json() as Promise<OrgList>;
+      })
+      .then((data) => {
+        setOrgs(data.orgs ?? {});
+      })
+      .catch((err) => {
+        setError(err.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
-  const filtered = useMemo(() => {
-    return SAMPLE_SERVICES.filter(s => {
-      if (owner && s.owner !== owner) return false;
-      if (category && s.category !== category) return false;
-      if (accessPackage && s.accessPackage !== accessPackage) return false;
-      if (query && !`${s.name} ${s.description}`.toLowerCase().includes(query.toLowerCase())) return false;
-      return true;
-    });
-  }, [owner, category, accessPackage, query]);
+  const sortedOrgs = useMemo(() => {
+    return Object.entries(orgs)
+      .map(([code, org]) => ({ code, ...org }))
+      .filter((org) => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        const name = getOrgName(org).toLowerCase();
+        return name.includes(q) || org.code.toLowerCase().includes(q) || (org.orgnr && org.orgnr.includes(q));
+      })
+      .sort((a, b) => getOrgName(a).localeCompare(getOrgName(b), 'nb'));
+  }, [orgs, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <header className="bg-white/60 dark:bg-gray-800/60 backdrop-blur sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Service Catalogue</h1>
-          <nav className="space-x-4 text-sm text-gray-600 dark:text-gray-300">
-            <a className="hover:underline" href="#">Home</a>
-            <a className="hover:underline" href="#services">Services</a>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+          <Heading level={1} data-size="md">
+            Tjenestekatalogen
+          </Heading>
+          <nav className="flex gap-4 text-sm">
+            <a className="hover:underline" href="#">
+              Hjem
+            </a>
+            <a className="hover:underline" href="#">
+              Om
+            </a>
           </nav>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-12">
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        {/* Hero */}
         <section className="text-center mb-10">
-          <h2 className="text-4xl font-extrabold">Find public digital services</h2>
-          <p className="mt-3 text-gray-600 dark:text-gray-300">Search by Service Owner, Category or Access Package.</p>
+          <Heading level={2} data-size="xl" className="mb-3">
+            Finn offentlige digitale tjenester
+          </Heading>
+          <Paragraph data-size="lg">
+            Utforsk tjenester fra over 60 offentlige etater. Velg en tjenesteeier for å se deres tjenester.
+          </Paragraph>
         </section>
 
-        <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Service Owner</label>
-              <select className="block w-full rounded border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-2" value={owner} onChange={e => setOwner(e.target.value)}>
-                <option value="">Any</option>
-                {owners.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
+        {/* Search */}
+        <section className="max-w-lg mx-auto mb-10">
+          <Search>
+            <SearchInput
+              aria-label="Søk etter etat"
+              placeholder="Søk etter etat eller organisasjonsnummer..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <SearchClear onClick={() => setSearchQuery('')} />
+          </Search>
+        </section>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Category</label>
-              <select className="block w-full rounded border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-2" value={category} onChange={e => setCategory(e.target.value)}>
-                <option value="">Any</option>
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Access Package</label>
-              <select className="block w-full rounded border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-2" value={accessPackage} onChange={e => setAccessPackage(e.target.value)}>
-                <option value="">Any</option>
-                {accessPackages.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Keyword</label>
-              <div className="flex gap-2">
-                <input className="flex-1 rounded border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-2" placeholder="Search service name or description" value={query} onChange={e => setQuery(e.target.value)} />
-                <button className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700" onClick={() => { /* search is reactive */ }}>Search</button>
-                <button className="px-3 py-2 border rounded" onClick={() => { setOwner(''); setCategory(''); setAccessPackage(''); setQuery(''); }}>Clear</button>
-              </div>
-            </div>
+        {/* Content */}
+        {loading && (
+          <div className="flex justify-center py-20">
+            <Spinner aria-label="Laster etater..." data-size="lg" />
           </div>
-        </section>
+        )}
 
-        <section id="services">
-          <h3 className="text-xl font-semibold mb-4">Results ({filtered.length})</h3>
+        {error && (
+          <Alert data-color="danger" className="mb-6">
+            Kunne ikke laste etater: {error}
+          </Alert>
+        )}
 
-          {filtered.length === 0 ? (
-            <div className="text-center py-16 text-gray-500">No services match your criteria.</div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map(s => (
-                <article key={s.id} className="rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
-                  <h4 className="text-lg font-semibold">{s.name}</h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">{s.description}</p>
-                  <div className="mt-4 text-sm flex flex-wrap gap-2">
-                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">Owner: {s.owner}</span>
-                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">Category: {s.category}</span>
-                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">Access: {s.accessPackage}</span>
-                  </div>
-                </article>
-              ))}
+        {!loading && !error && (
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <Heading level={3} data-size="sm">
+                Tjenesteeiere ({sortedOrgs.length})
+              </Heading>
             </div>
-          )}
-        </section>
+
+            {sortedOrgs.length === 0 ? (
+              <Paragraph className="text-center py-16 text-gray-500">
+                Ingen etater samsvarer med søket ditt.
+              </Paragraph>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {sortedOrgs.map((org) => {
+                  const logoUrl = getLogoUrl(org.code, org.logo);
+                  return (
+                    <Card key={org.code} className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardBlock className="flex flex-col items-center text-center p-4 gap-3">
+                        <div className="w-16 h-16 flex items-center justify-center rounded-full bg-gray-100 overflow-hidden flex-shrink-0">
+                          {logoUrl ? (
+                            <img
+                              src={logoUrl}
+                              alt={`${getOrgName(org)} logo`}
+                              className="w-12 h-12 object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                                const parent = (e.target as HTMLImageElement).parentElement;
+                                if (parent && !parent.querySelector('.fallback-initials')) {
+                                  const span = document.createElement('span');
+                                  span.className = 'fallback-initials text-lg font-semibold text-gray-400';
+                                  span.textContent = org.code.substring(0, 3).toUpperCase();
+                                  parent.appendChild(span);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span className="text-lg font-semibold text-gray-400">
+                              {org.code.substring(0, 3).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <Heading level={4} data-size="2xs">
+                          {getOrgName(org)}
+                        </Heading>
+                        {org.orgnr && (
+                          <Tag data-size="sm" variant="outline">
+                            {org.orgnr}
+                          </Tag>
+                        )}
+                      </CardBlock>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
       </main>
     </div>
   );

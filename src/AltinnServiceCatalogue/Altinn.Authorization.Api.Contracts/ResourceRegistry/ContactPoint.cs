@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Altinn.ResourceRegistry.Core.Models
+namespace Altinn.Authorization.Api.Contracts.ResourceRegistry
 {
     /// <summary>
     /// Defines a contact point

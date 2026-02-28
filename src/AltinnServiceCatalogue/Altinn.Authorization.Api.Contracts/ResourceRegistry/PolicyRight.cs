@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using Altinn.Authorization.Api.Contracts.ResourceRegistry;
 using Altinn.Urn.Json;
 
 namespace Altinn.ResourceRegistry.Core.Models

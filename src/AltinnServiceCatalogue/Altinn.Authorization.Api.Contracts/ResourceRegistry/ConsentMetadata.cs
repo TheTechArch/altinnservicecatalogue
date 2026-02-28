@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Altinn.ResourceRegistry.Core.Models
+namespace Altinn.Authorization.Api.Contracts.ResourceRegistry
 {
     /// <summary>
     /// Model describing the consent metadata for a resource

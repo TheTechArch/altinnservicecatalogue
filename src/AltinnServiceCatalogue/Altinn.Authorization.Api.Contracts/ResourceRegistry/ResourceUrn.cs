@@ -1,5 +1,6 @@
 ﻿#nullable enable
 
+using Altinn.Authorization.Api.Contracts.ResourceRegistry;
 using Altinn.Urn;
 
 namespace Altinn.ResourceRegistry.Core.Models;

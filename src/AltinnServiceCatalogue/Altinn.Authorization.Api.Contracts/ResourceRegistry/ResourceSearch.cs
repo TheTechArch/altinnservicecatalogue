@@ -1,5 +1,5 @@
 ﻿#nullable enable
-using Altinn.ResourceRegistry.Core.Enums;
+using Altinn.Authorization.Api.Contracts;
 
 namespace Altinn.ResourceRegistry.Core.Models
 {

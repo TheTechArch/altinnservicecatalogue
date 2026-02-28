@@ -1,8 +1,9 @@
 ﻿#nullable enable
 
+using Altinn;
 using System.ComponentModel;
 
-namespace Altinn.ResourceRegistry.Core.Models;
+namespace Altinn.Authorization.Api.Contracts.ResourceRegistry;
 
 /// <summary>
 /// Abstract base class for a page of items.

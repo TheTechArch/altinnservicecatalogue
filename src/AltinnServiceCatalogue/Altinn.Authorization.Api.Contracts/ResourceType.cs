@@ -1,7 +1,7 @@
 ﻿using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
-namespace Altinn.ResourceRegistry.Core.Enums
+namespace Altinn.Authorization.Api.Contracts
 {
     /// <summary>
     /// Enum representation of the different types of resources supported by the resource registry

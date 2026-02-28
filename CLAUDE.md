@@ -22,7 +22,16 @@ Full-stack web app for browsing/searching public digital services (Altinn ecosys
 
 ## Architecture
 - Backend serves React SPA as static assets with fallback to index.html
-- Vite proxies `/weatherforecast` to backend API in dev
+- Vite proxies `/weatherforecast` and `/api` to backend API in dev
 - Frontend: single App.tsx with sample service data, multi-criteria filtering
 - Tailwind dark mode support, responsive grid layout
 - Path alias: `@` → `./src` in Vite config
+- Designsystemet (@digdir/designsystemet-react) installed for UI components
+
+## Resource Registry Proxy
+- Controller: `Controllers/ResourceRegistryController.cs` at route `api/v1/{environment}/resource`
+- Service: `Services/ResourceRegistryClient.cs` (IResourceRegistryClient interface)
+- Config: `Configuration/ResourceRegistryOptions.cs` bound from `ResourceRegistry` section in appsettings
+- Environments: tt02 → platform.tt02.altinn.no, prod → platform.altinn.no
+- Endpoints: resourcelist, {id}, search, bysubject, orgs, {id}/policy, {id}/policy/subjects
+- Policy endpoints use raw stream pass-through to avoid UrnJsonTypeValue serialization issues

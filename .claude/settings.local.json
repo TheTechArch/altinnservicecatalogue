@@ -3,7 +3,10 @@
     "allow": [
       "WebFetch(domain:designsystemet.no)",
       "WebFetch(domain:www.npmjs.com)",
-      "Bash(npm install @digdir/designsystemet-react @digdir/designsystemet-css @digdir/designsystemet-theme)"
+      "Bash(npm install @digdir/designsystemet-react @digdir/designsystemet-css @digdir/designsystemet-theme)",
+      "Bash(xargs grep -l \"AccessList\")",
+      "Bash(dotnet build AltinnServiceCatalogue.Server/AltinnServiceCatalogue.Server.csproj)",
+      "Bash(npx tsc -b --noEmit)"
     ]
   }
 }

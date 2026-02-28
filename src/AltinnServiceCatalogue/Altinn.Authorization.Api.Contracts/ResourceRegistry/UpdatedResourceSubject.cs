@@ -1,4 +1,4 @@
-namespace Altinn.ResourceRegistry.Core.Models;
+namespace Altinn.Authorization.Api.Contracts.ResourceRegistry;
 
 /// <summary>
 /// Entry describing resource/subject pair that has been updated.

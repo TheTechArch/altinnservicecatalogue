@@ -1,5 +1,7 @@
 ﻿#nullable enable
 
+using Altinn.Authorization.Api.Contracts.ResourceRegistry;
+
 namespace Altinn.ResourceRegistry.Core.Models;
 
 /// <summary>

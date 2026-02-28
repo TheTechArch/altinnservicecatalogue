@@ -1,6 +1,7 @@
 ﻿#nullable enable
 
 using System.Diagnostics;
+using Altinn.Authorization.Api.Contracts.ResourceRegistry;
 using CommunityToolkit.Diagnostics;
 
 namespace Altinn.ResourceRegistry.Core.Models.Versioned;

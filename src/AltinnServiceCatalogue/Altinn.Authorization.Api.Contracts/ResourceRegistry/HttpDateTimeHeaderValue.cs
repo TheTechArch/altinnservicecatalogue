@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
 
-namespace Altinn.ResourceRegistry.Core.Models;
+namespace Altinn.Authorization.Api.Contracts.ResourceRegistry;
 
 /// <summary>
 /// The value of a http date-time header like <c>Last-Modified</c>

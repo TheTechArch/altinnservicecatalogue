@@ -1,7 +1,7 @@
 ﻿using Altinn.Urn;
 using Altinn.Urn.Json;
 
-namespace Altinn.ResourceRegistry.Core.Models
+namespace Altinn.Authorization.Api.Contracts.ResourceRegistry
 {
     /// <summary>
     /// Definees a flatten Policy Rule

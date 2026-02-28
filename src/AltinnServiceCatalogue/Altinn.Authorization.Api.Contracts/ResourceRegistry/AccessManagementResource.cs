@@ -1,6 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Altinn.ResourceRegistry.Core.Models;
+using System.ComponentModel.DataAnnotations;
 
-namespace Altinn.ResourceRegistry.Core.Models
+namespace Altinn.Authorization.Api.Contracts.ResourceRegistry
 {
     /// <summary>
     /// Entity to hold ResourceRegister resource with information needed for AccessManagement

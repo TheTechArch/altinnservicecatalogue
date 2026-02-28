@@ -6,7 +6,8 @@
       "Bash(npm install @digdir/designsystemet-react @digdir/designsystemet-css @digdir/designsystemet-theme)",
       "Bash(xargs grep -l \"AccessList\")",
       "Bash(dotnet build AltinnServiceCatalogue.Server/AltinnServiceCatalogue.Server.csproj)",
-      "Bash(npx tsc -b --noEmit)"
+      "Bash(npx tsc -b --noEmit)",
+      "Bash(npm install react-router-dom)"
     ]
   }
 }

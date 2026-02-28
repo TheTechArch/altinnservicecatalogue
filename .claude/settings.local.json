@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:designsystemet.no)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(npm install @digdir/designsystemet-react @digdir/designsystemet-css @digdir/designsystemet-theme)"
+    ]
+  }
+}

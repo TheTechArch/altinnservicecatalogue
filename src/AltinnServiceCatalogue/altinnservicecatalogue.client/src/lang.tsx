@@ -24,6 +24,21 @@ const translations: Record<string, Record<Lang, string>> = {
   'home.search.aria': { nb: 'Søk etter etat', en: 'Search for agency' },
   'home.serviceOwners': { nb: 'Tjenesteeiere', en: 'Service owners' },
   'home.noMatch': { nb: 'Ingen etater samsvarer med søket ditt.', en: 'No agencies match your search.' },
+  'home.tabs.serviceOwner': { nb: 'Tjenesteeier', en: 'Service owner' },
+  'home.tabs.resourceType': { nb: 'Tjenestetype', en: 'Resource type' },
+  'home.tabs.accessPackages': { nb: 'Tilgangspakker', en: 'Access packages' },
+  'home.tabs.roles': { nb: 'Roller', en: 'Roles' },
+  'home.tabs.comingSoon': { nb: 'Kommer snart...', en: 'Coming soon...' },
+  'home.resourceTypes': { nb: 'Tjenestetyper', en: 'Resource types' },
+
+  // ResourceTypePage
+  'type.back': { nb: 'Tilbake til alle tjenestetyper', en: 'Back to all resource types' },
+  'type.notFound': { nb: 'Fant ikke tjenestetype', en: 'Resource type not found' },
+  'type.services': { nb: 'Tjenester', en: 'Services' },
+  'type.search.placeholder': { nb: 'Søk i tjenester...', en: 'Search services...' },
+  'type.search.aria': { nb: 'Søk i tjenester', en: 'Search services' },
+  'type.noServices': { nb: 'Ingen tjenester av denne typen.', en: 'No services of this type.' },
+  'type.noMatch': { nb: 'Ingen tjenester samsvarer med søket ditt.', en: 'No services match your search.' },
 
   // OrgPage
   'org.back': { nb: 'Tilbake til alle etater', en: 'Back to all agencies' },

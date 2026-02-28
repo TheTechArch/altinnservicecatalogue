@@ -8,27 +8,28 @@ export default function Layout() {
   const { env, setEnv } = useEnv();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-          <Link to="/" className="no-underline">
-            <Heading level={1} data-size="md">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--ds-color-neutral-background-tinted)' }}>
+      <header style={{ backgroundColor: 'var(--ds-color-neutral-base-default)', color: 'var(--ds-color-neutral-base-contrast-default)' }}>
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link to="/" className="no-underline flex items-center gap-3 text-white">
+            <img src="/altinn-logo.svg" alt="Altinn" className="h-7 invert" />
+            <Heading level={1} data-size="md" className="text-white">
               {t('app.title')}
             </Heading>
           </Link>
           <div className="flex items-center gap-5">
             <nav className="flex gap-4 text-sm">
-              <Link className="hover:underline" to="/">
+              <Link className="text-white/80 hover:text-white hover:underline" to="/">
                 {t('nav.home')}
               </Link>
-              <a className="hover:underline" href="#">
+              <a className="text-white/80 hover:text-white hover:underline" href="#">
                 {t('nav.about')}
               </a>
             </nav>
             <div className="flex gap-1 items-center">
               <button
                 onClick={() => setEnv('tt02')}
-                className={`text-xs font-medium px-2 py-1 rounded ${env === 'tt02' ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-500' : 'text-gray-500 hover:text-gray-800'}`}
+                className={`text-xs font-medium px-2 py-1 rounded ${env === 'tt02' ? 'bg-white/20 text-white ring-1 ring-white/50' : 'text-white/60 hover:text-white'}`}
                 aria-label="TT02"
                 title="Test environment (TT02)"
               >
@@ -36,7 +37,7 @@ export default function Layout() {
               </button>
               <button
                 onClick={() => setEnv('prod')}
-                className={`text-xs font-medium px-2 py-1 rounded ${env === 'prod' ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-500' : 'text-gray-500 hover:text-gray-800'}`}
+                className={`text-xs font-medium px-2 py-1 rounded ${env === 'prod' ? 'bg-white/20 text-white ring-1 ring-white/50' : 'text-white/60 hover:text-white'}`}
                 aria-label="Prod"
                 title="Production environment"
               >
@@ -46,7 +47,7 @@ export default function Layout() {
             <div className="flex gap-1 items-center">
               <button
                 onClick={() => setLang('nb')}
-                className={`text-xl leading-none p-1 rounded ${lang === 'nb' ? 'ring-2 ring-blue-500' : 'opacity-60 hover:opacity-100'}`}
+                className={`text-xl leading-none p-1 rounded ${lang === 'nb' ? 'ring-1 ring-white/50' : 'opacity-60 hover:opacity-100'}`}
                 aria-label="Norsk"
                 title="Norsk"
               >
@@ -54,7 +55,7 @@ export default function Layout() {
               </button>
               <button
                 onClick={() => setLang('en')}
-                className={`text-xl leading-none p-1 rounded ${lang === 'en' ? 'ring-2 ring-blue-500' : 'opacity-60 hover:opacity-100'}`}
+                className={`text-xl leading-none p-1 rounded ${lang === 'en' ? 'ring-1 ring-white/50' : 'opacity-60 hover:opacity-100'}`}
                 aria-label="English"
                 title="English"
               >

@@ -10,7 +10,7 @@ import {
   Card,
   CardBlock,
 } from '@digdir/designsystemet-react';
-import type { ServiceResource } from '../types';
+import type { ServiceResource, PolicyRule, PackageDto, RoleDto } from '../types';
 import { getText } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
@@ -25,6 +25,39 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
   );
 }
 
+const ACTION_COLORS: Record<string, 'info' | 'success' | 'warning' | 'danger' | 'neutral'> = {
+  read: 'info',
+  write: 'success',
+  sign: 'warning',
+  confirmationrequired: 'neutral',
+};
+
+interface SubjectActions {
+  type: string;
+  value: string;
+  actions: string[];
+}
+
+/** Group policy rules by subject and collect actions per subject */
+function groupRulesBySubject(rules: PolicyRule[]): SubjectActions[] {
+  const map = new Map<string, SubjectActions>();
+
+  for (const rule of rules) {
+    for (const subject of rule.subject) {
+      const key = `${subject.type}::${subject.value}`;
+      if (!map.has(key)) {
+        map.set(key, { type: subject.type, value: subject.value, actions: [] });
+      }
+      const entry = map.get(key)!;
+      if (!entry.actions.includes(rule.action.value)) {
+        entry.actions.push(rule.action.value);
+      }
+    }
+  }
+
+  return [...map.values()];
+}
+
 export default function ResourcePage() {
   const { lang, t } = useLang();
   const { env } = useEnv();
@@ -33,6 +66,15 @@ export default function ResourcePage() {
   const [resource, setResource] = useState<ServiceResource | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Access rights from policy rules
+  const [packageSubjects, setPackageSubjects] = useState<SubjectActions[]>([]);
+  const [roleSubjects, setRoleSubjects] = useState<SubjectActions[]>([]);
+  const [loadingRules, setLoadingRules] = useState(false);
+
+  // Resolved links for packages and roles
+  const [packageInfo, setPackageInfo] = useState<Record<string, { id: string; name: string }>>({});
+  const [roleInfo, setRoleInfo] = useState<Record<string, { id: string; name: string }>>({});
 
   useEffect(() => {
     if (!id) return;
@@ -58,6 +100,109 @@ export default function ResourcePage() {
         setLoading(false);
       });
   }, [id, env]);
+
+  // Fetch policy rules for this resource
+  useEffect(() => {
+    if (!id) return;
+    setLoadingRules(true);
+
+    fetch(`/api/v1/${env}/resource/${encodeURIComponent(id)}/policy/rules`)
+      .then((res) => {
+        if (!res.ok) return [];
+        return res.json() as Promise<PolicyRule[]>;
+      })
+      .then((rules) => {
+        const subjects = groupRulesBySubject(rules);
+
+        const packages = subjects
+          .filter((s) => s.type === 'urn:altinn:accesspackage')
+          .sort((a, b) => a.value.localeCompare(b.value));
+        setPackageSubjects(packages);
+
+        const roles = subjects
+          .filter((s) =>
+            s.type === 'urn:altinn:rolecode' ||
+            s.type === 'urn:altinn:external-role' ||
+            s.type === 'urn:altinn:role',
+          )
+          .sort((a, b) => a.value.localeCompare(b.value));
+        setRoleSubjects(roles);
+      })
+      .catch(() => {
+        setPackageSubjects([]);
+        setRoleSubjects([]);
+      })
+      .finally(() => {
+        setLoadingRules(false);
+      });
+  }, [id, env]);
+
+  // Resolve package URN values to IDs and names
+  useEffect(() => {
+    if (packageSubjects.length === 0) return;
+    let cancelled = false;
+
+    Promise.all(
+      packageSubjects.map(async (subject) => {
+        try {
+          const res = await fetch(
+            `/api/v1/${env}/meta/info/accesspackages/urn/${encodeURIComponent(subject.value)}`,
+          );
+          if (!res.ok) return null;
+          const pkg: PackageDto = await res.json();
+          return { urnValue: subject.value, id: pkg.id, name: pkg.name };
+        } catch {
+          return null;
+        }
+      }),
+    ).then((results) => {
+      if (cancelled) return;
+      const info: Record<string, { id: string; name: string }> = {};
+      for (const r of results) {
+        if (r) info[r.urnValue] = { id: r.id, name: r.name };
+      }
+      setPackageInfo(info);
+    });
+
+    return () => { cancelled = true; };
+  }, [packageSubjects, env]);
+
+  // Resolve role subjects to IDs and names
+  useEffect(() => {
+    if (roleSubjects.length === 0) return;
+    let cancelled = false;
+
+    fetch(`/api/v1/${env}/meta/info/roles`)
+      .then((res) => {
+        if (!res.ok) return [];
+        return res.json() as Promise<RoleDto[]>;
+      })
+      .then((roles) => {
+        if (cancelled) return;
+        // Build lookup by full URN (lowercase)
+        const byUrn = new Map<string, RoleDto>();
+        for (const role of roles) {
+          byUrn.set(role.urn.toLowerCase(), role);
+          if (role.legacyRoleCode) {
+            byUrn.set(`urn:altinn:rolecode:${role.legacyRoleCode.toLowerCase()}`, role);
+          }
+        }
+
+        const info: Record<string, { id: string; name: string }> = {};
+        for (const subject of roleSubjects) {
+          const fullUrn = `${subject.type}:${subject.value}`.toLowerCase();
+          const matched = byUrn.get(fullUrn);
+          if (matched) {
+            const key = `${subject.type}::${subject.value}`;
+            info[key] = { id: matched.id, name: matched.name };
+          }
+        }
+        setRoleInfo(info);
+      })
+      .catch(() => {});
+
+    return () => { cancelled = true; };
+  }, [roleSubjects, env]);
 
   if (loading) {
     return (
@@ -156,6 +301,100 @@ export default function ResourcePage() {
           <Paragraph data-size="sm">{getText(resource.rightDescription, lang)}</Paragraph>
         </section>
       )}
+
+      {/* Access rights: packages and roles */}
+      <Card className="mb-8">
+        <CardBlock className="p-5">
+          <Heading level={3} data-size="xs" className="mb-4">
+            {t('resource.accessRights')}
+          </Heading>
+
+          {loadingRules && (
+            <div className="flex justify-center py-6">
+              <Spinner aria-label={t('loading')} data-size="md" />
+            </div>
+          )}
+
+          {!loadingRules && packageSubjects.length === 0 && roleSubjects.length === 0 && (
+            <Paragraph data-size="sm" className="text-gray-500">
+              {t('resource.noAccessRights')}
+            </Paragraph>
+          )}
+
+          {!loadingRules && packageSubjects.length > 0 && (
+            <div className="mb-6">
+              <Heading level={4} data-size="2xs" className="mb-3">
+                {t('resource.accessPackagesSection')} ({packageSubjects.length})
+              </Heading>
+              <div className="space-y-2">
+                {packageSubjects.map((subject) => {
+                  const pkg = packageInfo[subject.value];
+                  return (
+                    <div key={subject.value} className="flex items-center gap-2 flex-wrap">
+                      {pkg ? (
+                        <Link
+                          to={`/package/${pkg.id}`}
+                          className="text-sm font-medium text-blue-600 hover:underline min-w-0"
+                        >
+                          {pkg.name}
+                        </Link>
+                      ) : (
+                        <span className="text-sm font-medium min-w-0">{subject.value}</span>
+                      )}
+                      {subject.actions.map((action) => (
+                        <Tag
+                          key={action}
+                          data-size="sm"
+                          data-color={ACTION_COLORS[action] ?? 'neutral'}
+                        >
+                          {action}
+                        </Tag>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {!loadingRules && roleSubjects.length > 0 && (
+            <div>
+              <Heading level={4} data-size="2xs" className="mb-3">
+                {t('resource.rolesSection')} ({roleSubjects.length})
+              </Heading>
+              <div className="space-y-2">
+                {roleSubjects.map((subject) => {
+                  const key = `${subject.type}::${subject.value}`;
+                  const role = roleInfo[key];
+                  return (
+                    <div key={key} className="flex items-center gap-2 flex-wrap">
+                      {role ? (
+                        <Link
+                          to={`/role/${role.id}`}
+                          className="text-sm font-medium text-blue-600 hover:underline min-w-0"
+                        >
+                          {role.name}
+                        </Link>
+                      ) : (
+                        <span className="text-sm font-medium min-w-0">{subject.value}</span>
+                      )}
+                      {subject.actions.map((action) => (
+                        <Tag
+                          key={action}
+                          data-size="sm"
+                          data-color={ACTION_COLORS[action] ?? 'neutral'}
+                        >
+                          {action}
+                        </Tag>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </CardBlock>
+      </Card>
 
       {/* Competent Authority */}
       <Card className="mb-8">

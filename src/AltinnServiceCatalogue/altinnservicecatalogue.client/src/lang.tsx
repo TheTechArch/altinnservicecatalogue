@@ -85,6 +85,10 @@ const translations: Record<string, Record<Lang, string>> = {
   'resource.keywords': { nb: 'Nøkkelord', en: 'Keywords' },
   'resource.spatial': { nb: 'Geografisk dekning', en: 'Spatial coverage' },
   'resource.thematicAreas': { nb: 'Tematiske områder', en: 'Thematic areas' },
+  'resource.accessRights': { nb: 'Tilgangsrettigheter', en: 'Access rights' },
+  'resource.accessPackagesSection': { nb: 'Tilgangspakker', en: 'Access packages' },
+  'resource.rolesSection': { nb: 'Roller', en: 'Roles' },
+  'resource.noAccessRights': { nb: 'Ingen tilgangsrettigheter funnet.', en: 'No access rights found.' },
 
   // AccessPackages (HomePage tab + PackagePage)
   'packages.search.placeholder': { nb: 'Søk i tilgangspakker...', en: 'Search access packages...' },

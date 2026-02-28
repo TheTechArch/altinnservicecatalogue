@@ -18,6 +18,8 @@ public interface IResourceRegistryClient
 
     Task<OrgList?> GetOrgListAsync(string baseUrl, CancellationToken ct = default);
 
+    Task<Stream> GetResourcesBySubjectsAsync(string baseUrl, string[] subjectUrns, CancellationToken ct = default);
+
     Task<Stream> GetResourcePolicyAsync(string baseUrl, string id, CancellationToken ct = default);
 
     Task<Stream> GetResourcePolicySubjectsAsync(string baseUrl, string id, CancellationToken ct = default);

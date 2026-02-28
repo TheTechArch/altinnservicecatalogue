@@ -8,7 +8,25 @@
       "Bash(dotnet build AltinnServiceCatalogue.Server/AltinnServiceCatalogue.Server.csproj)",
       "Bash(npx tsc -b --noEmit)",
       "Bash(npm install react-router-dom)",
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(node -e \":*)",
+      "Bash(curl -s \"https://platform.tt02.altinn.no/accessmanagement/api/v1/meta/info/roles\")",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(json.dumps\\(data[0], indent=2\\)\\); print\\(f''\\\\nTotal: {len\\(data\\)} roles''\\)\")",
+      "Bash(dotnet build --nologo)",
+      "Bash(curl -s -X GET \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/bysubject\" -H \"Content-Type: application/json\" -d '{\"\"subject\"\":{\"\"type\"\":\"\"urn:altinn:rolecode\"\",\"\"value\"\":\"\"dagl\"\",\"\"urn\"\":\"\"urn:altinn:rolecode:dagl\"\"}}')",
+      "Bash(python3 -c \" import sys, json data = json.load\\(sys.stdin\\) # Show key roles with their URNs for r in data: if r.get\\(''isKeyRole''\\): print\\(f''{r[\"\"code\"\"]:30s} urn={r[\"\"urn\"\"]:60s} legacy={r.get\\(\"\"legacyRoleCode\"\",\"\"\"\"\\)}''\\) \")",
+      "Bash(python3 -c \":*)",
+      "Bash(curl -s \"https://platform.tt02.altinn.no/accessmanagement/api/v1/meta/info/roles\" -o d:/repos/altinnservicecatalogue/roles.json)",
+      "Bash(curl -s -X GET \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/bysubject\" -H \"Content-Type: application/json\" -d '{\"\"subject\"\":{\"\"type\"\":\"\"urn:altinn:external-role\"\",\"\"value\"\":\"\"ccr:daglig-leder\"\",\"\"urn\"\":\"\"urn:altinn:external-role:ccr:daglig-leder\"\"}}')",
+      "Bash(curl -s -X POST \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/bysubject\" -H \"Content-Type: application/json\" -d '{\"\"subject\"\":{\"\"type\"\":\"\"urn:altinn:external-role\"\",\"\"value\"\":\"\"ccr:daglig-leder\"\",\"\"urn\"\":\"\"urn:altinn:external-role:ccr:daglig-leder\"\"}}')",
+      "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/nav_aa-registeret/policy/rules\")",
+      "Bash(curl -sv \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/skd_mva/policy/rules\")",
+      "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/swagger/v1/swagger.json\")",
+      "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/bysubjects\" -H \"Content-Type: application/json\" -d '[\"\"urn:altinn:rolecode:admai\"\"]')",
+      "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/bysubjects\" -H \"Content-Type: application/json\" -d '[\"\"urn:altinn:external-role:ccr:daglig-leder\"\"]')"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
     ]
   }
 }

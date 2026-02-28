@@ -5,6 +5,7 @@ import OrgPage from './pages/OrgPage';
 import ResourcePage from './pages/ResourcePage';
 import ResourceTypePage from './pages/ResourceTypePage';
 import PackagePage from './pages/PackagePage';
+import RolePage from './pages/RolePage';
 import './App.css';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <Route path="org/:orgCode" element={<OrgPage />} />
         <Route path="type/:resourceType" element={<ResourceTypePage />} />
         <Route path="package/:packageId" element={<PackagePage />} />
+        <Route path="role/:roleId" element={<RolePage />} />
         <Route path="resource/:id" element={<ResourcePage />} />
       </Route>
     </Routes>

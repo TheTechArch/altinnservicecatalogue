@@ -13,7 +13,7 @@ import {
   Tabs,
   Tag,
 } from '@digdir/designsystemet-react';
-import type { Org, OrgList, ServiceResource, AreaGroupDto } from '../types';
+import type { Org, OrgList, ServiceResource, AreaGroupDto, RoleDto } from '../types';
 import { getText, OrgLogo } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
@@ -38,6 +38,12 @@ export default function HomePage() {
   const [loadingPackages, setLoadingPackages] = useState(true);
   const [errorPackages, setErrorPackages] = useState<string | null>(null);
   const [packageSearch, setPackageSearch] = useState('');
+
+  // Roles tab state
+  const [roles, setRoles] = useState<RoleDto[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(true);
+  const [errorRoles, setErrorRoles] = useState<string | null>(null);
+  const [roleSearch, setRoleSearch] = useState('');
 
   // Fetch orgs
   useEffect(() => {
@@ -99,6 +105,26 @@ export default function HomePage() {
       });
   }, [env]);
 
+  // Fetch roles
+  useEffect(() => {
+    setLoadingRoles(true);
+    setErrorRoles(null);
+    fetch(`/api/v1/${env}/meta/info/roles`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to fetch roles: ${res.status}`);
+        return res.json() as Promise<RoleDto[]>;
+      })
+      .then((data) => {
+        setRoles(data);
+      })
+      .catch((err) => {
+        setErrorRoles(err.message);
+      })
+      .finally(() => {
+        setLoadingRoles(false);
+      });
+  }, [env]);
+
   // Filter groups/areas/packages by search
   const filteredGroups = useMemo(() => {
     if (!packageSearch) return groups;
@@ -131,6 +157,38 @@ export default function HomePage() {
       })
       .sort((a, b) => getText(a.name, lang).localeCompare(getText(b.name, lang), lang === 'nb' ? 'nb' : 'en'));
   }, [orgs, orgSearch, lang]);
+
+  // Group roles by provider, with search filter
+  const rolesByProvider = useMemo(() => {
+    const q = roleSearch.toLowerCase();
+    const filtered = roles.filter((r) => {
+      if (!roleSearch) return true;
+      return (
+        r.name.toLowerCase().includes(q) ||
+        r.code.toLowerCase().includes(q) ||
+        r.description?.toLowerCase().includes(q)
+      );
+    });
+
+    const map = new Map<string, { provider: string; roles: RoleDto[] }>();
+    for (const role of filtered) {
+      const providerName = role.provider?.name ?? 'Ukjent';
+      if (!map.has(providerName)) {
+        map.set(providerName, { provider: providerName, roles: [] });
+      }
+      map.get(providerName)!.roles.push(role);
+    }
+
+    // Sort: key roles first within each group, then alphabetically
+    for (const group of map.values()) {
+      group.roles.sort((a, b) => {
+        if (a.isKeyRole !== b.isKeyRole) return a.isKeyRole ? -1 : 1;
+        return a.name.localeCompare(b.name, lang === 'nb' ? 'nb' : 'en');
+      });
+    }
+
+    return [...map.values()].sort((a, b) => a.provider.localeCompare(b.provider));
+  }, [roles, roleSearch, lang]);
 
   const resourceTypes = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -373,12 +431,86 @@ export default function HomePage() {
           </div>
         </Tabs.Panel>
 
-        {/* Tab: Roles (placeholder) */}
+        {/* Tab: Roles */}
         <Tabs.Panel value="roles">
           <div className="pt-6">
-            <Paragraph className="text-center py-16 text-gray-500">
-              {t('home.tabs.comingSoon')}
-            </Paragraph>
+            {/* Search */}
+            <section className="max-w-lg mx-auto mb-8">
+              <Search>
+                <SearchInput
+                  aria-label={t('roles.search.aria')}
+                  placeholder={t('roles.search.placeholder')}
+                  value={roleSearch}
+                  onChange={(e) => setRoleSearch(e.target.value)}
+                />
+                <SearchClear onClick={() => setRoleSearch('')} />
+              </Search>
+            </section>
+
+            {loadingRoles && (
+              <div className="flex justify-center py-20">
+                <Spinner aria-label={t('loading')} data-size="lg" />
+              </div>
+            )}
+
+            {errorRoles && (
+              <Alert data-color="danger" className="mb-6">
+                {t('error.loadData')}: {errorRoles}
+              </Alert>
+            )}
+
+            {!loadingRoles && !errorRoles && rolesByProvider.length === 0 && roleSearch && (
+              <Paragraph className="text-center py-16 text-gray-500">
+                {t('roles.noMatch')}
+              </Paragraph>
+            )}
+
+            {!loadingRoles && !errorRoles && rolesByProvider.map((group) => (
+              <section key={group.provider} className="mb-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <Heading level={3} data-size="sm">
+                    {group.provider}
+                  </Heading>
+                  <Tag data-size="sm" data-color="neutral">
+                    {group.roles.length} {t('roles.roles')}
+                  </Tag>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {group.roles.map((role) => (
+                    <Link
+                      key={role.id}
+                      to={`/role/${role.id}`}
+                      state={{ role }}
+                      className="no-underline"
+                    >
+                      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                        <CardBlock className="p-4 flex flex-col gap-2">
+                          <Heading level={5} data-size="2xs">
+                            {role.name}
+                          </Heading>
+                          {role.description && (
+                            <Paragraph data-size="sm" className="text-gray-600 line-clamp-2">
+                              {role.description}
+                            </Paragraph>
+                          )}
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {role.isKeyRole && (
+                              <Tag data-size="sm" data-color="info">
+                                {t('roles.keyRole')}
+                              </Tag>
+                            )}
+                            <Tag data-size="sm" data-color="neutral">
+                              {role.code}
+                            </Tag>
+                          </div>
+                        </CardBlock>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
         </Tabs.Panel>
       </Tabs>

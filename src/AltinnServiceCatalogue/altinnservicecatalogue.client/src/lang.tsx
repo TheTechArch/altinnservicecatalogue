@@ -101,6 +101,25 @@ const translations: Record<string, Record<Lang, string>> = {
   'packages.group': { nb: 'Kategori', en: 'Category' },
   'packages.urn': { nb: 'URN', en: 'URN' },
 
+  // Roles (HomePage tab + RolePage)
+  'roles.search.placeholder': { nb: 'Søk i roller...', en: 'Search roles...' },
+  'roles.search.aria': { nb: 'Søk i roller', en: 'Search roles' },
+  'roles.noMatch': { nb: 'Ingen roller samsvarer med søket ditt.', en: 'No roles match your search.' },
+  'roles.roles': { nb: 'roller', en: 'roles' },
+  'roles.back': { nb: 'Tilbake til roller', en: 'Back to roles' },
+  'roles.notFound': { nb: 'Fant ikke rolle', en: 'Role not found' },
+  'roles.keyRole': { nb: 'Nøkkelrolle', en: 'Key role' },
+  'roles.provider': { nb: 'Leverandør', en: 'Provider' },
+  'roles.code': { nb: 'Kode', en: 'Code' },
+  'roles.urn': { nb: 'URN', en: 'URN' },
+  'roles.legacyRoleCode': { nb: 'Eldre rollekode', en: 'Legacy role code' },
+  'roles.legacyUrn': { nb: 'Eldre URN', en: 'Legacy URN' },
+  'roles.policyAvailable': { nb: 'Ressurspolicy tilgjengelig', en: 'Resource policy available' },
+  'roles.allRoles': { nb: 'Alle roller', en: 'All roles' },
+  'roles.keyRoles': { nb: 'Nøkkelroller', en: 'Key roles' },
+  'roles.services': { nb: 'Tjenester med denne rollen', en: 'Services with this role' },
+  'roles.noServices': { nb: 'Ingen tjenester knyttet til denne rollen.', en: 'No services associated with this role.' },
+
   // Common
   'yes': { nb: 'Ja', en: 'Yes' },
   'no': { nb: 'Nei', en: 'No' },

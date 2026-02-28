@@ -108,6 +108,28 @@ public class ResourceRegistryController(
         }
     }
 
+    [HttpPost("bysubjects")]
+    [Produces("application/json")]
+    public async Task<IActionResult> GetResourcesBySubjects(
+        [FromRoute] string environment,
+        [FromBody] string[] subjectUrns,
+        CancellationToken ct)
+    {
+        if (!TryResolveBaseUrl(environment, out var baseUrl))
+            return BadRequest($"Unknown environment: {environment}");
+
+        try
+        {
+            var stream = await client.GetResourcesBySubjectsAsync(baseUrl, subjectUrns, ct);
+            return new FileStreamResult(stream, "application/json");
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Upstream request failed for GetResourcesBySubjects in {Environment}", environment);
+            return StatusCode(StatusCodes.Status502BadGateway, "Upstream service unavailable");
+        }
+    }
+
     [HttpGet("orgs")]
     [ProducesResponseType<OrgList>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetOrgList(

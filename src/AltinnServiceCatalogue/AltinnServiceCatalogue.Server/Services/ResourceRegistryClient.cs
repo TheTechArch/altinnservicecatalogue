@@ -88,6 +88,16 @@ public class ResourceRegistryClient(IHttpClientFactory httpClientFactory, ILogge
         return await response.Content.ReadFromJsonAsync<OrgList>(JsonOptions, ct);
     }
 
+    public async Task<Stream> GetResourcesBySubjectsAsync(string baseUrl, string[] subjectUrns, CancellationToken ct)
+    {
+        var client = CreateClient();
+        var url = $"{baseUrl}{BasePath}/bysubjects";
+
+        var response = await client.PostAsJsonAsync(url, subjectUrns, JsonOptions, ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStreamAsync(ct);
+    }
+
     public async Task<Stream> GetResourcePolicyAsync(string baseUrl, string id, CancellationToken ct)
     {
         var client = CreateClient();

@@ -141,6 +141,39 @@ export interface AreaGroupDto {
   areas?: AreaDto[];
 }
 
+// Roles
+
+export interface RoleDto {
+  id: string;
+  name: string;
+  code: string;
+  description: string;
+  isKeyRole: boolean;
+  urn: string;
+  legacyRoleCode?: string;
+  legacyUrn?: string;
+  isResourcePolicyAvailable: boolean;
+  provider?: MetaProvider;
+}
+
+// Subject resources (bysubjects response)
+
+export interface SubjectAttribute {
+  type: string;
+  value: string;
+  urn: string;
+}
+
+export interface SubjectResourcesEntry {
+  subject: SubjectAttribute;
+  resources: SubjectAttribute[];
+}
+
+export interface SubjectResourcesResponse {
+  links: Record<string, string>;
+  data: SubjectResourcesEntry[];
+}
+
 // Policy rules
 
 export interface PolicyRuleSubject {

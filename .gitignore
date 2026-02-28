@@ -12,3 +12,4 @@
 /src/AltinnServiceCatalogue/altinnservicecatalogue.client/package-lock.json
 /src/AltinnServiceCatalogue/AltinnServiceCatalogue.Server/bin/Release/net10.0
 /src/AltinnServiceCatalogue/altinnservicecatalogue.client/obj/Release
+/src/AltinnServiceCatalogue/Altinn.Authorization.Api.Contracts/bin/Release/net10.0

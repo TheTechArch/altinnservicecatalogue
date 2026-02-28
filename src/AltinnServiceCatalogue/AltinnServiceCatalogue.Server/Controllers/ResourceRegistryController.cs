@@ -173,6 +173,28 @@ public class ResourceRegistryController(
         }
     }
 
+    [HttpGet("{id}/policy/rules")]
+    [Produces("application/json")]
+    public async Task<IActionResult> GetResourcePolicyRules(
+        [FromRoute] string environment,
+        [FromRoute] string id,
+        CancellationToken ct)
+    {
+        if (!TryResolveBaseUrl(environment, out var baseUrl))
+            return BadRequest($"Unknown environment: {environment}");
+
+        try
+        {
+            var stream = await client.GetResourcePolicyRulesAsync(baseUrl, id, ct);
+            return new FileStreamResult(stream, "application/json");
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Upstream request failed for GetResourcePolicyRules({Id}) in {Environment}", id, environment);
+            return StatusCode(StatusCodes.Status502BadGateway, "Upstream service unavailable");
+        }
+    }
+
     private bool TryResolveBaseUrl(string environment, out string baseUrl)
     {
         return _options.Environments.TryGetValue(environment, out baseUrl!);

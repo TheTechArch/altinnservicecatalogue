@@ -140,3 +140,21 @@ export interface AreaGroupDto {
   type: string;
   areas?: AreaDto[];
 }
+
+// Policy rules
+
+export interface PolicyRuleSubject {
+  type: string;
+  value: string;
+}
+
+export interface PolicyRuleAction {
+  type: string;
+  value: string;
+}
+
+export interface PolicyRule {
+  subject: PolicyRuleSubject[];
+  action: PolicyRuleAction;
+  resource: { type: string; value: string }[];
+}

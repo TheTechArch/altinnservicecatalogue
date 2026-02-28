@@ -108,5 +108,15 @@ public class ResourceRegistryClient(IHttpClientFactory httpClientFactory, ILogge
         return await response.Content.ReadAsStreamAsync(ct);
     }
 
+    public async Task<Stream> GetResourcePolicyRulesAsync(string baseUrl, string id, CancellationToken ct)
+    {
+        var client = CreateClient();
+        var url = $"{baseUrl}{BasePath}/{Uri.EscapeDataString(id)}/policy/rules";
+
+        var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStreamAsync(ct);
+    }
+
     private HttpClient CreateClient() => httpClientFactory.CreateClient("ResourceRegistry");
 }

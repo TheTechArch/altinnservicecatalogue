@@ -21,4 +21,6 @@ public interface IResourceRegistryClient
     Task<Stream> GetResourcePolicyAsync(string baseUrl, string id, CancellationToken ct = default);
 
     Task<Stream> GetResourcePolicySubjectsAsync(string baseUrl, string id, CancellationToken ct = default);
+
+    Task<Stream> GetResourcePolicyRulesAsync(string baseUrl, string id, CancellationToken ct = default);
 }

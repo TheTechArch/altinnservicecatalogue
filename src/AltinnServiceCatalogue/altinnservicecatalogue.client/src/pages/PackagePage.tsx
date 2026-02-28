@@ -9,7 +9,7 @@ import {
   Card,
   CardBlock,
 } from '@digdir/designsystemet-react';
-import type { PackageDto, MetaResource, AreaGroupDto } from '../types';
+import type { PackageDto, MetaResource, AreaGroupDto, PolicyRule } from '../types';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
 
@@ -18,13 +18,48 @@ interface SearchResult {
   score: number;
 }
 
+/** Extract the short accesspackage value from a URN like "urn:altinn:accesspackage:motorvognavgift" */
+function getPackageUrnValue(urn: string): string {
+  const parts = urn.split(':');
+  return parts[parts.length - 1];
+}
+
+/** Fetch policy rules for a resource and extract actions granted to a specific access package */
+async function fetchActionsForPackage(
+  env: string,
+  resourceRefId: string,
+  packageUrnValue: string,
+): Promise<string[]> {
+  try {
+    const res = await fetch(`/api/v1/${env}/resource/${encodeURIComponent(resourceRefId)}/policy/rules`);
+    if (!res.ok) return [];
+    const rules: PolicyRule[] = await res.json();
+    const actions = rules
+      .filter((rule) =>
+        rule.subject.some(
+          (s) => s.type === 'urn:altinn:accesspackage' && s.value === packageUrnValue,
+        ),
+      )
+      .map((rule) => rule.action.value);
+    return [...new Set(actions)];
+  } catch {
+    return [];
+  }
+}
+
+const ACTION_COLORS: Record<string, 'info' | 'success' | 'warning' | 'danger' | 'neutral'> = {
+  read: 'info',
+  write: 'success',
+  sign: 'warning',
+  confirmationrequired: 'neutral',
+};
+
 export default function PackagePage() {
   const { t } = useLang();
   const { env } = useEnv();
   const { packageId } = useParams<{ packageId: string }>();
   const location = useLocation();
 
-  // Package info from router state (passed from HomePage)
   const statePkg = (location.state as { pkg?: PackageDto } | null)?.pkg ?? null;
 
   const [pkg, setPkg] = useState<PackageDto | null>(statePkg);
@@ -32,13 +67,15 @@ export default function PackagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Map of resourceRefId -> actions granted by this package
+  const [actionMap, setActionMap] = useState<Record<string, string[]>>({});
+
+  // Fetch package data
   useEffect(() => {
     if (!packageId) return;
     setLoading(true);
     setError(null);
 
-    // If we have package info from router state, search by name to get resources
-    // Otherwise, fetch the export to find the package first
     const lookupPromise: Promise<PackageDto | null> = statePkg
       ? searchForPackage(env, statePkg.name, packageId)
       : fetchFromExport(env, packageId);
@@ -49,7 +86,6 @@ export default function PackagePage() {
           setPkg(found);
           setResources(found.resources ?? []);
         } else if (statePkg) {
-          // Search didn't find it with resources, use state data
           setPkg(statePkg);
           setResources([]);
         }
@@ -61,6 +97,26 @@ export default function PackagePage() {
         setLoading(false);
       });
   }, [packageId, env]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch policy rules for each resource once we have them
+  useEffect(() => {
+    if (!pkg || resources.length === 0) return;
+    const packageUrnValue = getPackageUrnValue(pkg.urn);
+
+    // Fetch rules for all resources in parallel
+    Promise.all(
+      resources.map(async (r) => {
+        const actions = await fetchActionsForPackage(env, r.refId, packageUrnValue);
+        return [r.refId, actions] as const;
+      }),
+    ).then((entries) => {
+      const map: Record<string, string[]> = {};
+      for (const [refId, actions] of entries) {
+        map[refId] = actions;
+      }
+      setActionMap(map);
+    });
+  }, [pkg, resources, env]);
 
   if (loading) {
     return (
@@ -182,38 +238,52 @@ export default function PackagePage() {
           </Paragraph>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {resources.map((resource) => (
-              <Link
-                key={resource.id}
-                to={`/resource/${encodeURIComponent(resource.refId)}`}
-                className="no-underline"
-              >
-                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                  <CardBlock className="p-5 flex flex-col gap-2">
-                    <Heading level={4} data-size="2xs">
-                      {resource.name}
-                    </Heading>
-                    {resource.description && (
-                      <Paragraph data-size="sm" className="text-gray-600 line-clamp-3">
-                        {resource.description}
-                      </Paragraph>
-                    )}
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {resource.provider && (
-                        <Tag data-size="sm" data-color="neutral">
-                          {resource.provider.name}
-                        </Tag>
+            {resources.map((resource) => {
+              const actions = actionMap[resource.refId] ?? [];
+              return (
+                <Link
+                  key={resource.id}
+                  to={`/resource/${encodeURIComponent(resource.refId)}`}
+                  className="no-underline"
+                >
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                    <CardBlock className="p-5 flex flex-col gap-2">
+                      <Heading level={4} data-size="2xs">
+                        {resource.name}
+                      </Heading>
+                      {resource.description && (
+                        <Paragraph data-size="sm" className="text-gray-600 line-clamp-3">
+                          {resource.description}
+                        </Paragraph>
                       )}
-                      {resource.type && (
-                        <Tag data-size="sm" variant="outline">
-                          {resource.type.name}
-                        </Tag>
-                      )}
-                    </div>
-                  </CardBlock>
-                </Card>
-              </Link>
-            ))}
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {actions.map((action) => (
+                          <Tag
+                            key={action}
+                            data-size="sm"
+                            data-color={ACTION_COLORS[action] ?? 'neutral'}
+                          >
+                            {action}
+                          </Tag>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {resource.provider && (
+                          <Tag data-size="sm" data-color="neutral">
+                            {resource.provider.name}
+                          </Tag>
+                        )}
+                        {resource.type && (
+                          <Tag data-size="sm" variant="outline">
+                            {resource.type.name}
+                          </Tag>
+                        )}
+                      </div>
+                    </CardBlock>
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>
@@ -236,15 +306,12 @@ async function fetchFromExport(env: string, id: string): Promise<PackageDto | nu
   if (!res.ok) throw new Error(`Failed to fetch packages: ${res.status}`);
   const groups: AreaGroupDto[] = await res.json();
 
-  // Find the package in the export hierarchy
   for (const group of groups) {
     for (const area of group.areas ?? []) {
       const found = (area.packages ?? []).find((p) => p.id === id);
       if (found) {
-        // Now search to get resources
         const withResources = await searchForPackage(env, found.name, id);
         if (withResources) {
-          // Merge area/group info from export (search doesn't include group)
           withResources.area = {
             ...withResources.area,
             ...area,
@@ -253,7 +320,6 @@ async function fetchFromExport(env: string, id: string): Promise<PackageDto | nu
           } as PackageDto['area'];
           return withResources;
         }
-        // Fallback: return export data without resources
         found.area = { ...area, packages: undefined, group: { ...group, areas: undefined } };
         return found;
       }

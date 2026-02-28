@@ -19,6 +19,18 @@ builder.Services.AddHttpClient("ResourceRegistry", client =>
 
 builder.Services.AddScoped<IResourceRegistryClient, ResourceRegistryClient>();
 
+// Metadata proxy configuration
+builder.Services.Configure<MetadataOptions>(
+    builder.Configuration.GetSection(MetadataOptions.SectionName));
+
+builder.Services.AddHttpClient("Metadata", client =>
+{
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+builder.Services.AddScoped<IMetadataClient, MetadataClient>();
+
 var app = builder.Build();
 
 app.UseDefaultFiles();

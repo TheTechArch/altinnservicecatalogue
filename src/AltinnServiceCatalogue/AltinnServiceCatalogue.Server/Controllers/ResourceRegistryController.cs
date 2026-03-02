@@ -30,7 +30,7 @@ public class ResourceRegistryController(
 
         try
         {
-            var result = await client.GetResourceListAsync(baseUrl, includeApps, includeAltinn2, ct);
+            var result = await cacheService.GetResourceListAsync(baseUrl, ct);
             return Ok(result);
         }
         catch (HttpRequestException ex)
@@ -53,6 +53,10 @@ public class ResourceRegistryController(
 
         try
         {
+            var cached = await cacheService.GetResourceByIdAsync(baseUrl, id, ct);
+            if (cached is not null)
+                return Ok(cached);
+
             var result = await client.GetResourceAsync(baseUrl, id, ct);
             if (result is null)
                 return NotFound();

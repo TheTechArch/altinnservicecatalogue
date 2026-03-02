@@ -11,7 +11,7 @@ public class ResourceCacheService(
     ILogger<ResourceCacheService> logger) : IResourceCacheService
 {
     private const string BasePath = "/resourceregistry/api/v1/resource";
-    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(30);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -35,7 +35,26 @@ public class ResourceCacheService(
         var resources = await response.Content.ReadFromJsonAsync<List<ServiceResource>>(JsonOptions, ct) ?? [];
 
         cache.Set(cacheKey, resources, CacheDuration);
+
+        var dict = resources
+            .Where(r => !string.IsNullOrEmpty(r.Identifier))
+            .ToDictionary(r => r.Identifier!, StringComparer.OrdinalIgnoreCase);
+        cache.Set($"resource-dict-{baseUrl}", dict, CacheDuration);
+
         return resources;
+    }
+
+    public async Task<ServiceResource?> GetResourceByIdAsync(string baseUrl, string id, CancellationToken ct)
+    {
+        var dictKey = $"resource-dict-{baseUrl}";
+
+        if (!cache.TryGetValue(dictKey, out Dictionary<string, ServiceResource>? dict) || dict is null)
+        {
+            await GetResourceListAsync(baseUrl, ct);
+            cache.TryGetValue(dictKey, out dict);
+        }
+
+        return dict is not null && dict.TryGetValue(id, out var resource) ? resource : null;
     }
 
     public async Task<List<string>> GetKeywordsAsync(string baseUrl, CancellationToken ct)

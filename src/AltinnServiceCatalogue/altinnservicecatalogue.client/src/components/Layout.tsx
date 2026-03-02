@@ -12,10 +12,8 @@ export default function Layout() {
       <header style={{ backgroundColor: 'var(--ds-color-neutral-base-default)', color: 'var(--ds-color-neutral-base-contrast-default)' }}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="no-underline flex items-center gap-3 text-white">
-            <img src="/altinn-logo.svg" alt="Altinn" className="h-7 invert" />
-            <Heading level={1} data-size="md" className="text-white">
-              {t('app.title')}
-            </Heading>
+            <img src="/logo_houses.png" alt="" className="h-9" />
+            <span className="text-lg font-semibold">tjenesteoversikten.no</span>
           </Link>
           <div className="flex items-center gap-5">
             <nav className="flex gap-4 text-sm">

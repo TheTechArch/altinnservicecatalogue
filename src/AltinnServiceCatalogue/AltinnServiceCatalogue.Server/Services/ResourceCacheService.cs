@@ -38,6 +38,7 @@ public class ResourceCacheService(
 
         var dict = resources
             .Where(r => !string.IsNullOrEmpty(r.Identifier))
+            .DistinctBy(r => r.Identifier!, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(r => r.Identifier!, StringComparer.OrdinalIgnoreCase);
         cache.Set($"resource-dict-{baseUrl}", dict, CacheDuration);
 

@@ -259,11 +259,24 @@ export default function HomePage() {
     <>
       {/* Hero */}
       <section className="text-center mb-10">
+        <img src="/tjenesteoversikten_logo.png" alt="tjenesteoversikten.no" className="h-20 mx-auto mb-6" />
         <Heading level={2} data-size="xl" className="mb-3">
           {t('home.hero.title')}
         </Heading>
         <Paragraph data-size="lg">
-          {t('home.hero.subtitle')}
+          {t('home.hero.subtitle')}{' '}
+          {t('home.hero.source')}
+          <a
+            href="https://docs.altinn.studio/nb/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t('home.hero.sourceText')}
+          </a>
+          .
+        </Paragraph>
+        <Paragraph data-size="sm" className="mt-2 opacity-60">
+          {t('home.hero.disclaimer')}
         </Paragraph>
       </section>
 

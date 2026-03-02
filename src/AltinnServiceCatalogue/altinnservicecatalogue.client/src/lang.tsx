@@ -12,14 +12,17 @@ const translations: Record<string, Record<Lang, string>> = {
   // Layout
   'nav.home': { nb: 'Hjem', en: 'Home' },
   'nav.about': { nb: 'Om', en: 'About' },
-  'app.title': { nb: 'Tjenestekatalogen', en: 'Service Catalogue' },
+  'app.title': { nb: 'tjenesteoversikten.no', en: 'tjenesteoversikten.no' },
 
   // HomePage
   'home.hero.title': { nb: 'Finn offentlige digitale tjenester', en: 'Find public digital services' },
   'home.hero.subtitle': {
-    nb: 'Utforsk tjenester fra over 60 offentlige etater. Velg en tjenesteeier for å se deres tjenester.',
-    en: 'Explore services from over 60 public agencies. Select a service owner to see their services.',
+    nb: 'En digital tjenestekatalog som viser oversikt over digitale tjenester tilgjengelig i Norge.',
+    en: 'A digital service catalogue showing an overview of digital services available in Norway.',
   },
+  'home.hero.source': { nb: 'Kilden er ', en: 'Source: ' },
+  'home.hero.sourceText': { nb: 'Altinn sitt Ressursregister', en: "Altinn's Resource Registry" },
+  'home.hero.disclaimer': { nb: 'Dette er ikke et offisielt produkt fra Altinn.', en: 'This is not an official product from Altinn.' },
   'home.search.placeholder': { nb: 'Søk etter etat...', en: 'Search for agency...' },
   'home.search.aria': { nb: 'Søk etter etat', en: 'Search for agency' },
   'home.serviceOwners': { nb: 'Tjenesteeiere', en: 'Service owners' },

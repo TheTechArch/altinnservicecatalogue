@@ -1,5 +1,4 @@
 import { Link, Outlet } from 'react-router-dom';
-import { Heading } from '@digdir/designsystemet-react';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
 

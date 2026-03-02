@@ -19,15 +19,23 @@ public class ResourceCacheService(
         PropertyNameCaseInsensitive = true,
     };
 
-    public async Task<List<ServiceResource>> GetResourceListAsync(string baseUrl, CancellationToken ct)
+    public async Task<List<ServiceResource>> GetResourceListAsync(string baseUrl, bool? includeApps = null, bool? includeAltinn2 = null, CancellationToken ct = default)
     {
-        var cacheKey = $"resource-list-{baseUrl}";
+        var cacheKey = $"resource-list-{baseUrl}-{includeApps}-{includeAltinn2}";
 
         if (cache.TryGetValue(cacheKey, out List<ServiceResource>? cached) && cached is not null)
             return cached;
 
         var client = httpClientFactory.CreateClient("ResourceRegistry");
         var url = $"{baseUrl}{BasePath}/resourcelist";
+
+        var queryParams = new List<string> { "includeMigratedApps=true" };
+        if (includeApps.HasValue)
+            queryParams.Add($"includeApps={includeApps.Value.ToString().ToLower()}");
+        if (includeAltinn2.HasValue)
+            queryParams.Add($"includeAltinn2={includeAltinn2.Value.ToString().ToLower()}");
+        url += "?" + string.Join("&", queryParams);
+
         logger.LogInformation("Fetching and caching resource list from {Url}", url);
 
         var response = await client.GetAsync(url, ct);
@@ -40,18 +48,18 @@ public class ResourceCacheService(
             .Where(r => !string.IsNullOrEmpty(r.Identifier))
             .DistinctBy(r => r.Identifier!, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(r => r.Identifier!, StringComparer.OrdinalIgnoreCase);
-        cache.Set($"resource-dict-{baseUrl}", dict, CacheDuration);
+        cache.Set($"resource-dict-{baseUrl}-{includeApps}-{includeAltinn2}", dict, CacheDuration);
 
         return resources;
     }
 
     public async Task<ServiceResource?> GetResourceByIdAsync(string baseUrl, string id, CancellationToken ct)
     {
-        var dictKey = $"resource-dict-{baseUrl}";
+        var dictKey = $"resource-dict-{baseUrl}-{(bool?)null}-{(bool?)null}";
 
         if (!cache.TryGetValue(dictKey, out Dictionary<string, ServiceResource>? dict) || dict is null)
         {
-            await GetResourceListAsync(baseUrl, ct);
+            await GetResourceListAsync(baseUrl, ct: ct);
             cache.TryGetValue(dictKey, out dict);
         }
 
@@ -60,7 +68,7 @@ public class ResourceCacheService(
 
     public async Task<List<string>> GetKeywordsAsync(string baseUrl, CancellationToken ct)
     {
-        var resources = await GetResourceListAsync(baseUrl, ct);
+        var resources = await GetResourceListAsync(baseUrl, ct: ct);
 
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var keywords = new List<string>();
@@ -83,7 +91,7 @@ public class ResourceCacheService(
 
     public async Task<List<ServiceResource>> GetResourcesByKeywordAsync(string baseUrl, string keyword, CancellationToken ct)
     {
-        var resources = await GetResourceListAsync(baseUrl, ct);
+        var resources = await GetResourceListAsync(baseUrl, ct: ct);
 
         return resources
             .Where(r => r.Keywords?.Any(kw =>

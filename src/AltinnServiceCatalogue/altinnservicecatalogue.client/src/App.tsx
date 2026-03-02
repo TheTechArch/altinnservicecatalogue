@@ -7,6 +7,7 @@ import ResourceTypePage from './pages/ResourceTypePage';
 import PackagePage from './pages/PackagePage';
 import RolePage from './pages/RolePage';
 import KeywordPage from './pages/KeywordPage';
+import AboutPage from './pages/AboutPage';
 import './App.css';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="owners" element={<HomePage />} />
+        <Route path="search" element={<HomePage />} />
         <Route path="types" element={<HomePage />} />
         <Route path="packages" element={<HomePage />} />
         <Route path="roles" element={<HomePage />} />
@@ -25,6 +27,7 @@ function App() {
         <Route path="package/:packageId" element={<PackagePage />} />
         <Route path="role/:roleId" element={<RolePage />} />
         <Route path="resource/:id" element={<ResourcePage />} />
+        <Route path="about" element={<AboutPage />} />
       </Route>
     </Routes>
   );

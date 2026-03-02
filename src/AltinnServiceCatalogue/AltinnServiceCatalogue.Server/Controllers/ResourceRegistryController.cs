@@ -30,7 +30,7 @@ public class ResourceRegistryController(
 
         try
         {
-            var result = await cacheService.GetResourceListAsync(baseUrl, ct);
+            var result = await cacheService.GetResourceListAsync(baseUrl, includeApps, includeAltinn2, ct);
             return Ok(result);
         }
         catch (HttpRequestException ex)

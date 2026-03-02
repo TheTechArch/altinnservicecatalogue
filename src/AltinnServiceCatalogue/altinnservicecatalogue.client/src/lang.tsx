@@ -140,6 +140,57 @@ const translations: Record<string, Record<Lang, string>> = {
   'keyword.search.aria': { nb: 'Søk i tjenester', en: 'Search services' },
   'keyword.noMatch': { nb: 'Ingen tjenester samsvarer med søket ditt.', en: 'No services match your search.' },
 
+  // Advanced Search tab
+  'home.tabs.search': { nb: 'Søk', en: 'Search' },
+  'search.placeholder': { nb: 'Søk i tittel, beskrivelse, identifikator...', en: 'Search title, description, identifier...' },
+  'search.aria': { nb: 'Søk i tjenester', en: 'Search services' },
+  'search.filters': { nb: 'Filtre', en: 'Filters' },
+  'search.resourceType': { nb: 'Tjenestetype', en: 'Resource type' },
+  'search.status': { nb: 'Status', en: 'Status' },
+  'search.allStatuses': { nb: 'Alle statuser', en: 'All statuses' },
+  'search.availableFor': { nb: 'Tilgjengelig for', en: 'Available for' },
+  'search.properties': { nb: 'Egenskaper', en: 'Properties' },
+  'search.onlyDelegable': { nb: 'Kun delegerbare', en: 'Delegable only' },
+  'search.onlyVisible': { nb: 'Kun synlige', en: 'Visible only' },
+  'search.selfIdentified': { nb: 'Selvidentifiserte brukere', en: 'Self-identified users' },
+  'search.enterpriseUsers': { nb: 'Virksomhetsbrukere', en: 'Enterprise users' },
+  'search.accessListEnabled': { nb: 'Tilgangsliste aktivert', en: 'Access list enabled' },
+  'search.migratedFromAltinn2': { nb: 'Migrert fra Altinn 2', en: 'Migrated from Altinn 2' },
+  'search.clearFilters': { nb: 'Nullstill filtre', en: 'Clear filters' },
+  'search.results': { nb: 'tjenester', en: 'services' },
+  'search.noResults': { nb: 'Ingen tjenester samsvarer med filtrene dine.', en: 'No services match your filters.' },
+  'search.showing': { nb: 'Viser', en: 'Showing' },
+  'search.of': { nb: 'av', en: 'of' },
+  // Resource type labels
+  'resourceType.Default': { nb: 'Standard', en: 'Default' },
+  'resourceType.Systemresource': { nb: 'Systemressurs', en: 'System resource' },
+  'resourceType.MaskinportenSchema': { nb: 'Maskinporten-skjema', en: 'Maskinporten schema' },
+  'resourceType.Altinn2Service': { nb: 'Altinn 2-tjeneste', en: 'Altinn 2 service' },
+  'resourceType.AltinnApp': { nb: 'Altinn-app', en: 'Altinn app' },
+  'resourceType.GenericAccessResource': { nb: 'Generell tilgangsressurs', en: 'Generic access resource' },
+  'resourceType.BrokerService': { nb: 'Meldingsformidler', en: 'Broker service' },
+  'resourceType.CorrespondenceService': { nb: 'Korrespondansetjeneste', en: 'Correspondence service' },
+  'resourceType.Consent': { nb: 'Samtykke', en: 'Consent' },
+  // Party type labels
+  'partyType.PrivatePerson': { nb: 'Privatperson', en: 'Private person' },
+  'partyType.LegalEntityEnterprise': { nb: 'Juridisk enhet/Foretak', en: 'Legal entity/Enterprise' },
+  'partyType.Company': { nb: 'Virksomhet', en: 'Company' },
+  'partyType.BankruptcyEstate': { nb: 'Konkursbo', en: 'Bankruptcy estate' },
+  'partyType.SelfRegisteredUser': { nb: 'Selvregistrert bruker', en: 'Self-registered user' },
+
+  // AboutPage
+  'about.title': { nb: 'Om tjenesteoversikten.no', en: 'About tjenesteoversikten.no' },
+  'about.welcome': { nb: 'Velkommen til tjenesteoversikten.no', en: 'Welcome to tjenesteoversikten.no' },
+  'about.description': {
+    nb: 'Tjenesteoversikten.no gir deg en samlet oversikt over både digitale og analoge tjenester som er registrert i Altinn Ressursregister. Her kan du enkelt finne nøkkelinformasjon om hver tjeneste – blant annet beskrivelse, kontaktinformasjon og hvilke rettighetskrav som gjelder.',
+    en: 'Tjenesteoversikten.no gives you a comprehensive overview of both digital and analogue services registered in the Altinn Resource Registry. Here you can easily find key information about each service – including description, contact information and applicable authorisation requirements.',
+  },
+  'about.openApi': {
+    nb: 'Løsningen er bygget utelukkende på åpne API-er som Altinn tilbyr.',
+    en: 'The solution is built exclusively on open APIs provided by Altinn.',
+  },
+  'about.sourceCode': { nb: 'Kildekoden er tilgjengelig på GitHub:', en: 'The source code is available on GitHub:' },
+
   // Common
   'yes': { nb: 'Ja', en: 'Yes' },
   'no': { nb: 'Nei', en: 'No' },

@@ -1,11 +1,11 @@
-/* Layer order: Tailwind resets < Designsystemet < Tailwind utilities */
-@layer base, ds.theme, ds.base, ds.components, components, utilities;
+/* Designsystemet must be imported before Tailwind v4 so its @layer declarations
+   are established first, keeping ds.components below Tailwind utilities. */
+@import "@digdir/designsystemet-theme/altinn.css";
+@import "@digdir/designsystemet-css";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Global styles (unlayered — highest priority) */
+/* Global styles */
 html, body, #root {
   height: 100%;
 }

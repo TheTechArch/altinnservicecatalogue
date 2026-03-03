@@ -1,8 +1,21 @@
-/* Designsystemet must be imported before Tailwind v4 so its @layer declarations
-   are established first, keeping ds.components below Tailwind utilities. */
+/*
+  Layer order declaration must come first.
+  This ensures ds.components sits ABOVE Tailwind's base (preflight)
+  but BELOW Tailwind's utilities.
+  Without this, Tailwind base wins over ds.components and breaks component styles.
+*/
+@layer base, ds.theme, ds.base, ds.components, utilities;
+
+/* Designsystemet: CSS custom properties (--ds-* variables) */
 @import "@digdir/designsystemet-theme/altinn.css";
+
+/* Designsystemet: maps --ds-* to Tailwind v4 @theme namespace */
+@import "@digdir/designsystemet-theme/altinn.tailwind.css";
+
+/* Designsystemet: component styles */
 @import "@digdir/designsystemet-css";
 
+/* Tailwind v4 */
 @import "tailwindcss";
 
 /* Global styles */

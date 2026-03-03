@@ -141,7 +141,7 @@ const translations: Record<string, Record<Lang, string>> = {
   'keyword.noMatch': { nb: 'Ingen tjenester samsvarer med søket ditt.', en: 'No services match your search.' },
 
   // Advanced Search tab
-  'home.tabs.search': { nb: 'Søk', en: 'Search' },
+  'home.tabs.search': { nb: 'Avansert søk', en: 'Advanced search' },
   'search.placeholder': { nb: 'Søk i tittel, beskrivelse, identifikator...', en: 'Search title, description, identifier...' },
   'search.aria': { nb: 'Søk i tjenester', en: 'Search services' },
   'search.filters': { nb: 'Filtre', en: 'Filters' },

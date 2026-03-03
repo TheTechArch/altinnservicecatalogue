@@ -43,11 +43,11 @@ import { useEnv } from '../env';
 const TAB_PATHS: Record<string, string> = {
   '/': 'serviceOwner',
   '/owners': 'serviceOwner',
-  '/search': 'search',
   '/types': 'resourceType',
   '/packages': 'accessPackages',
   '/roles': 'roles',
   '/keywords': 'keywords',
+  '/search': 'search',
 };
 
 const PATH_FOR_TAB: Record<string, string> = {
@@ -367,11 +367,11 @@ export default function HomePage() {
       <Tabs value={activeTab} onChange={(val) => navigate(PATH_FOR_TAB[val] ?? '/')}>
         <Tabs.List>
           <Tabs.Tab value="serviceOwner">{t('home.tabs.serviceOwner')}</Tabs.Tab>
-          <Tabs.Tab value="search">{t('home.tabs.search')}</Tabs.Tab>
           <Tabs.Tab value="resourceType">{t('home.tabs.resourceType')}</Tabs.Tab>
           <Tabs.Tab value="accessPackages">{t('home.tabs.accessPackages')}</Tabs.Tab>
           <Tabs.Tab value="roles">{t('home.tabs.roles')}</Tabs.Tab>
           <Tabs.Tab value="keywords">{t('home.tabs.keywords')}</Tabs.Tab>
+          <Tabs.Tab value="search">{t('home.tabs.search')}</Tabs.Tab>
         </Tabs.List>
 
         {/* Tab: Service owner */}

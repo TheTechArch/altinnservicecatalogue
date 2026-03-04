@@ -222,6 +222,30 @@ public class ResourceRegistryController(
         }
     }
 
+    [HttpGet("{id}/policy/rights")]
+    [ProducesResponseType<List<RightDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetResourcePolicyRights(
+        [FromRoute] string environment,
+        [FromRoute] string id,
+        CancellationToken ct)
+    {
+        if (!TryResolveBaseUrl(environment, out var baseUrl))
+            return BadRequest($"Unknown environment: {environment}");
+
+        var acceptLanguage = string.Join(",", Request.GetTypedHeaders().AcceptLanguage);
+
+        try
+        {
+            var result = await client.GetResourcePolicyRightsAsync(baseUrl, id, acceptLanguage, ct);
+            return Ok(result);
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Upstream request failed for GetResourcePolicyRights({Id}) in {Environment}", id, environment);
+            return StatusCode(StatusCodes.Status502BadGateway, "Upstream service unavailable");
+        }
+    }
+
     [HttpGet("keywords")]
     [ProducesResponseType<List<string>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetKeywords(

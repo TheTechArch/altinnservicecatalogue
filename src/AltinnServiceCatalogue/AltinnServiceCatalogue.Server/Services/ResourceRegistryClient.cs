@@ -9,6 +9,7 @@ namespace AltinnServiceCatalogue.Server.Services;
 public class ResourceRegistryClient(IHttpClientFactory httpClientFactory, ILogger<ResourceRegistryClient> logger) : IResourceRegistryClient
 {
     private const string BasePath = "/resourceregistry/api/v1/resource";
+    private const string BasePathV2 = "/resourceregistry/api/v2/resource";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -126,6 +127,20 @@ public class ResourceRegistryClient(IHttpClientFactory httpClientFactory, ILogge
         var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStreamAsync(ct);
+    }
+
+    public async Task<List<RightDto>> GetResourcePolicyRightsAsync(string baseUrl, string id, string? acceptLanguage, CancellationToken ct)
+    {
+        var httpClient = CreateClient();
+        var url = $"{baseUrl}{BasePathV2}/{Uri.EscapeDataString(id)}/policy/rights";
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        if (!string.IsNullOrEmpty(acceptLanguage))
+            request.Headers.TryAddWithoutValidation("Accept-Language", acceptLanguage);
+
+        var response = await httpClient.SendAsync(request, ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<RightDto>>(JsonOptions, ct) ?? [];
     }
 
     private HttpClient CreateClient() => httpClientFactory.CreateClient("ResourceRegistry");

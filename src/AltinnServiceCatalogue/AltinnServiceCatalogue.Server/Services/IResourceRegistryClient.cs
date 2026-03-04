@@ -25,4 +25,6 @@ public interface IResourceRegistryClient
     Task<Stream> GetResourcePolicySubjectsAsync(string baseUrl, string id, CancellationToken ct = default);
 
     Task<Stream> GetResourcePolicyRulesAsync(string baseUrl, string id, CancellationToken ct = default);
+
+    Task<List<RightDto>> GetResourcePolicyRightsAsync(string baseUrl, string id, string? acceptLanguage, CancellationToken ct = default);
 }

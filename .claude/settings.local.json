@@ -25,7 +25,9 @@
       "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/bysubjects\" -H \"Content-Type: application/json\" -d '[\"\"urn:altinn:rolecode:admai\"\"]')",
       "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/bysubjects\" -H \"Content-Type: application/json\" -d '[\"\"urn:altinn:external-role:ccr:daglig-leder\"\"]')",
       "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/aarsregnskap-correspondence/policy/rules\")",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d[k] for k in [''exports'',''main'',''style''] if k in d}, indent=2\\)\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d[k] for k in [''exports'',''main'',''style''] if k in d}, indent=2\\)\\)\")",
+      "WebFetch(domain:platform.altinn.no)",
+      "Bash(dotnet build src/AltinnServiceCatalogue/AltinnServiceCatalogue.slnx)"
     ],
     "additionalDirectories": [
       "\\tmp"

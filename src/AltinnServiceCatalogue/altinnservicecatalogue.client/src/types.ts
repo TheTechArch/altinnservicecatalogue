@@ -174,6 +174,15 @@ export interface SubjectResourcesResponse {
   data: SubjectResourcesEntry[];
 }
 
+// Policy rights (v2 API)
+
+export interface ResourceRight {
+  key: string;
+  name: string;
+  resource: string[];
+  action: string;
+}
+
 // Policy rules
 
 export interface PolicyRuleSubject {

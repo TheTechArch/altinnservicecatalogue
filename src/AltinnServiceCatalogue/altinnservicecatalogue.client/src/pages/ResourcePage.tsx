@@ -10,11 +10,73 @@ import {
   Card,
   CardBlock,
 } from '@digdir/designsystemet-react';
-import type { ServiceResource, PolicyRule, PackageDto, RoleDto } from '../types';
+import type { ServiceResource, PolicyRule, PackageDto, RoleDto, ResourceRight } from '../types';
 import { getText } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
 import { ResourceTypeTag } from '../components/ResourceTypeTag';
+
+/** Extracts a readable label from a scope URN, e.g. "urn:altinn:task:taskutfylling" → "Taskutfylling" */
+function scopeLabel(urn: string): string {
+  const last = urn.split(':').at(-1) ?? urn;
+  return last.charAt(0).toUpperCase() + last.slice(1);
+}
+
+function sortResources(resources: string[]): string[] {
+  return [...resources].sort((a, b) => {
+    const aIsMain = a.startsWith('urn:altinn:resource');
+    const bIsMain = b.startsWith('urn:altinn:resource');
+    if (aIsMain && !bIsMain) return -1;
+    if (!aIsMain && bIsMain) return 1;
+    return 0;
+  });
+}
+
+function RightsGroups({ rights, resourceLevelLabel }: { rights: import('../types').ResourceRight[]; resourceLevelLabel: string }) {
+  // Sort each right's resource array so urn:altinn:resource is always first
+  const sorted = rights.map((r) => ({ ...r, resource: sortResources(r.resource) }));
+
+  // Partition into resource-level (1 resource URN) and scoped (2+ resource URNs)
+  const resourceLevel = sorted.filter((r) => r.resource.length < 2);
+  const scoped = sorted.filter((r) => r.resource.length >= 2);
+
+  // Group scoped rights by the second resource URN (scope = sub-resource)
+  const scopeMap = new Map<string, import('../types').ResourceRight[]>();
+  for (const right of scoped) {
+    const scope = right.resource[1];
+    if (!scopeMap.has(scope)) scopeMap.set(scope, []);
+    scopeMap.get(scope)!.push(right);
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {resourceLevel.length > 0 && (
+        <div>
+          <p className="text-xs font-medium mb-2" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+            {resourceLevelLabel}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {resourceLevel.map((r) => (
+              <Tag key={r.key} data-size="sm" data-color="info">{r.name}</Tag>
+            ))}
+          </div>
+        </div>
+      )}
+      {[...scopeMap.entries()].map(([scope, scopeRights]) => (
+        <div key={scope}>
+          <p className="text-xs font-medium mb-2" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+            {scopeLabel(scope)}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {scopeRights.map((r) => (
+              <Tag key={r.key} data-size="sm" data-color="neutral">{r.name}</Tag>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   if (!children) return null;
@@ -77,6 +139,10 @@ export default function ResourcePage() {
   const [packageInfo, setPackageInfo] = useState<Record<string, { id: string; name: string }>>({});
   const [roleInfo, setRoleInfo] = useState<Record<string, { id: string; name: string }>>({});
 
+  // Possible rights (v2 API)
+  const [rights, setRights] = useState<ResourceRight[]>([]);
+  const [loadingRights, setLoadingRights] = useState(false);
+
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -137,6 +203,25 @@ export default function ResourcePage() {
         setLoadingRules(false);
       });
   }, [id, env]);
+
+  // Fetch possible rights (v2 API) — not available for Altinn2Service
+  useEffect(() => {
+    if (!id || !resource) return;
+    if (resource.resourceType === 'Altinn2Service') return;
+
+    setLoadingRights(true);
+
+    fetch(`/api/v1/${env}/resource/${encodeURIComponent(id)}/policy/rights`, {
+      headers: { 'Accept-Language': lang },
+    })
+      .then((res) => {
+        if (!res.ok) return [];
+        return res.json() as Promise<ResourceRight[]>;
+      })
+      .then(setRights)
+      .catch(() => setRights([]))
+      .finally(() => setLoadingRights(false));
+  }, [id, env, lang, resource]);
 
   // Resolve package URN values to IDs and names
   useEffect(() => {
@@ -299,6 +384,35 @@ export default function ResourcePage() {
           </Heading>
           <Paragraph data-size="sm">{getText(resource.rightDescription, lang)}</Paragraph>
         </section>
+      )}
+
+      {/* Possible rights */}
+      {(loadingRights || rights.length > 0) && (
+        <Card className="mb-8">
+          <CardBlock className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <Heading level={3} data-size="xs">
+                {t('resource.possibleRights')}
+              </Heading>
+              <a
+                href={`/api/v1/${env}/resource/${encodeURIComponent(id!)}/policy/rights`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-600 hover:underline font-mono"
+              >
+                /policy/rights ↗
+              </a>
+            </div>
+
+            {loadingRights && (
+              <div className="flex justify-center py-6">
+                <Spinner aria-label={t('loading')} data-size="md" />
+              </div>
+            )}
+
+            {!loadingRights && <RightsGroups rights={rights} resourceLevelLabel={t('resource.possibleRights.resourceLevel')} />}
+          </CardBlock>
+        </Card>
       )}
 
       {/* Access rights: packages and roles */}

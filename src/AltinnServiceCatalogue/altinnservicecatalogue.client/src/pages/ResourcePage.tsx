@@ -14,6 +14,7 @@ import type { ServiceResource, PolicyRule, PackageDto, RoleDto } from '../types'
 import { getText } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
+import { ResourceTypeTag } from '../components/ResourceTypeTag';
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   if (!children) return null;
@@ -261,9 +262,7 @@ export default function ResourcePage() {
           {getText(resource.title, lang)}
         </Heading>
         <div className="flex flex-wrap gap-2">
-          <Tag data-size="sm" variant="outline">
-            {resource.resourceType}
-          </Tag>
+          <ResourceTypeTag type={resource.resourceType} />
           {resource.status && (
             <Tag data-size="sm" data-color={resource.status === 'Active' ? 'success' : 'neutral'}>
               {resource.status}

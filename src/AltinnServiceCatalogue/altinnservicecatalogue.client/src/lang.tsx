@@ -171,6 +171,44 @@ const translations: Record<string, Record<Lang, string>> = {
   'resourceType.BrokerService': { nb: 'Meldingsformidler', en: 'Broker service' },
   'resourceType.CorrespondenceService': { nb: 'Korrespondansetjeneste', en: 'Correspondence service' },
   'resourceType.Consent': { nb: 'Samtykke', en: 'Consent' },
+
+  // Resource type descriptions
+  'resourceType.description.Default': {
+    nb: 'Standard ressurstype i Altinn. Brukes for generelle tilganger som ikke faller inn under en mer spesifikk kategori.',
+    en: 'Standard resource type in Altinn. Used for general access rights that do not fit into a more specific category.',
+  },
+  'resourceType.description.Systemresource': {
+    nb: 'Representerer tilganger for tekniske systemer og integrasjoner. Brukes typisk ved maskin-til-maskin-kommunikasjon der et system handler på vegne av en virksomhet.',
+    en: 'Represents access rights for technical systems and integrations. Typically used for machine-to-machine communication where a system acts on behalf of an organisation.',
+  },
+  'resourceType.description.MaskinportenSchema': {
+    nb: 'Et Maskinporten-skjema gir virksomheter tilgang til API-er basert på virksomhetssertifikater via Maskinporten. Benyttes for sikker og standardisert maskin-til-maskin-kommunikasjon.',
+    en: 'A Maskinporten schema grants organisations access to APIs based on business certificates via Maskinporten. Used for secure, standardised machine-to-machine communication.',
+  },
+  'resourceType.description.Altinn2Service': {
+    nb: 'En tjeneste opprinnelig utviklet i Altinn 2-plattformen. Disse tjenestene er registrert i ressursregisteret og kan fortsatt være i aktiv bruk.',
+    en: 'A service originally developed in the Altinn 2 platform. These services are registered in the resource registry and may still be in active use.',
+  },
+  'resourceType.description.AltinnApp': {
+    nb: 'En applikasjon bygget i Altinn Studio – den moderne plattformen for utvikling av offentlige digitale tjenester. Altinn-apper håndterer skjema, innsending og saksbehandling.',
+    en: 'An application built in Altinn Studio – the modern platform for developing public digital services. Altinn apps handle forms, submissions and case processing.',
+  },
+  'resourceType.description.GenericAccessResource': {
+    nb: 'En generell tilgangsressurs som styrer hvem som har rett til å utføre bestemte handlinger, uten å være knyttet til en spesifikk tjenestetype.',
+    en: 'A generic access resource that controls who is authorised to perform specific actions, without being tied to a specific service type.',
+  },
+  'resourceType.description.BrokerService': {
+    nb: 'En meldingsformidlingstjeneste som lar virksomheter utveksle filer og meldinger sikkert via Altinn Formidling.',
+    en: 'A message broker service that allows organisations to securely exchange files and messages via Altinn Broker.',
+  },
+  'resourceType.description.CorrespondenceService': {
+    nb: 'En korrespondansetjeneste for sikker digital kommunikasjon mellom det offentlige og innbyggere eller virksomheter, for eksempel varsler og meldinger i innboksen.',
+    en: 'A correspondence service for secure digital communication between public bodies and citizens or organisations, such as notifications and messages in the inbox.',
+  },
+  'resourceType.description.Consent': {
+    nb: 'En samtykkeressurs der brukeren aktivt gir tillatelse til at en tredjepart kan hente informasjon eller utføre handlinger på brukerens vegne.',
+    en: 'A consent resource where the user actively grants permission for a third party to retrieve information or perform actions on their behalf.',
+  },
   // Party type labels
   'partyType.PrivatePerson': { nb: 'Privatperson', en: 'Private person' },
   'partyType.LegalEntityEnterprise': { nb: 'Juridisk enhet/Foretak', en: 'Legal entity/Enterprise' },

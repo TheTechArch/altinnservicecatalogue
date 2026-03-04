@@ -25,11 +25,6 @@ const RESOURCE_TYPES = [
 const AVAILABLE_FOR_TYPES = [
   'PrivatePerson', 'LegalEntityEnterprise', 'Company', 'BankruptcyEstate', 'SelfRegisteredUser',
 ];
-const RESOURCE_TYPE_COLORS: Record<string, string> = {
-  AltinnApp: 'info', MaskinportenSchema: 'warning', GenericAccessResource: 'success',
-  BrokerService: 'warning', CorrespondenceService: 'neutral', Altinn2Service: 'neutral',
-  Consent: 'info', Systemresource: 'neutral', Default: 'neutral',
-};
 const SEARCH_DISPLAY_LIMIT = 100;
 
 function toggleArrayItem(arr: string[], item: string): string[] {
@@ -39,6 +34,7 @@ import type { Org, OrgList, ServiceResource, AreaGroupDto, RoleDto } from '../ty
 import { getText, OrgLogo } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
+import { ResourceTypeTag, RESOURCE_TYPE_COLORS } from '../components/ResourceTypeTag';
 
 const TAB_PATHS: Record<string, string> = {
   '/': 'serviceOwner',
@@ -466,21 +462,35 @@ export default function HomePage() {
                   </Heading>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {resourceTypes.map(({ type, count }) => (
-                    <Link key={type} to={`/type/${encodeURIComponent(type)}`} className="no-underline">
-                      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                        <CardBlock className="flex flex-col items-center text-center p-5 gap-3">
-                          <Heading level={4} data-size="2xs">
-                            {type}
-                          </Heading>
-                          <Tag data-size="sm" data-color="neutral">
-                            {count} {t('type.services').toLowerCase()}
-                          </Tag>
-                        </CardBlock>
-                      </Card>
-                    </Link>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {resourceTypes.map(({ type, count }) => {
+                    const color = RESOURCE_TYPE_COLORS[type] ?? 'neutral';
+                    return (
+                      <Link key={type} to={`/type/${encodeURIComponent(type)}`} className="no-underline">
+                        <Card className="hover:shadow-md transition-shadow cursor-pointer h-full" style={{ overflow: 'hidden' }}>
+                          <div className="flex h-full">
+                            <div
+                              data-color={color}
+                              style={{ width: '4px', flexShrink: 0, background: 'var(--ds-color-base-default)' }}
+                            />
+                            <div className="p-5 flex flex-col gap-3 flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-3">
+                                <Heading level={4} data-size="xs">
+                                  {t(`resourceType.${type}`)}
+                                </Heading>
+                                <Tag data-size="sm" data-color={color} className="flex-shrink-0">
+                                  {count} {t('type.services').toLowerCase()}
+                                </Tag>
+                              </div>
+                              <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                                {t(`resourceType.description.${type}`)}
+                              </Paragraph>
+                            </div>
+                          </div>
+                        </Card>
+                      </Link>
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -825,12 +835,7 @@ export default function HomePage() {
                                   {getText(r.title, lang)}
                                 </Heading>
                                 <div className="flex flex-wrap gap-1 flex-shrink-0">
-                                  <Tag
-                                    data-size="sm"
-                                    data-color={RESOURCE_TYPE_COLORS[r.resourceType] ?? 'neutral'}
-                                  >
-                                    {t(`resourceType.${r.resourceType}`)}
-                                  </Tag>
+                                  <ResourceTypeTag type={r.resourceType} />
                                   {r.status && (
                                     <Tag data-size="sm" data-color="neutral">{r.status}</Tag>
                                   )}

@@ -322,6 +322,19 @@ export default function ResourcePage() {
   const orgCode = resource.hasCompetentAuthority?.orgcode?.toLowerCase();
   const yesNo = (val: boolean | undefined) => (val ? t('yes') : t('no'));
 
+  const hasAltinn2Ref = resource.resourceReferences?.some((r) => r.referenceSource === 'Altinn2');
+  const appRef =
+    resource.resourceType === 'AltinnApp' && !hasAltinn2Ref
+      ? resource.resourceReferences?.find((r) => r.referenceType === 'ApplicationId')
+      : undefined;
+  const appUrl = appRef?.reference
+    ? (() => {
+        const [org, app] = appRef.reference.split('/');
+        const domain = env === 'prod' ? 'altinn.no' : 'tt02.altinn.no';
+        return `https://${org}.apps.${domain}/${org}/${app}/`;
+      })()
+    : undefined;
+
   return (
     <>
       {/* Breadcrumb */}
@@ -343,9 +356,22 @@ export default function ResourcePage() {
 
       {/* Title + status tags */}
       <section className="mb-8">
-        <Heading level={2} data-size="lg" className="mb-3">
-          {getText(resource.title, lang)}
-        </Heading>
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <Heading level={2} data-size="lg">
+            {getText(resource.title, lang)}
+          </Heading>
+          {appUrl && (
+            <a
+              href={appUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="primary" data-size="sm" asChild>
+                <span>{t('resource.goToApp')} ↗</span>
+              </Button>
+            </a>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           <ResourceTypeTag type={resource.resourceType} />
           {resource.status && (

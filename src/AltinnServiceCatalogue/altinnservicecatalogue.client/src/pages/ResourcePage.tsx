@@ -322,18 +322,33 @@ export default function ResourcePage() {
   const orgCode = resource.hasCompetentAuthority?.orgcode?.toLowerCase();
   const yesNo = (val: boolean | undefined) => (val ? t('yes') : t('no'));
 
-  const hasAltinn2Ref = resource.resourceReferences?.some((r) => r.referenceSource === 'Altinn2');
+  const domain = env === 'prod' ? 'altinn.no' : 'tt02.altinn.no';
+
+  // AltinnApp migrated from Altinn 2 — identifier contains _a2- (e.g. app_mat_a2-3982-1)
+  const isAltinnAppMigratedFromA2 =
+    resource.resourceType === 'AltinnApp' && resource.identifier.includes('_a2-');
+
+  // AltinnApp not migrated — build app URL from ApplicationId reference
   const appRef =
-    resource.resourceType === 'AltinnApp' && !hasAltinn2Ref
+    resource.resourceType === 'AltinnApp' && !isAltinnAppMigratedFromA2
       ? resource.resourceReferences?.find((r) => r.referenceType === 'ApplicationId')
       : undefined;
   const appUrl = appRef?.reference
     ? (() => {
         const [org, app] = appRef.reference.split('/');
-        const domain = env === 'prod' ? 'altinn.no' : 'tt02.altinn.no';
         return `https://${org}.apps.${domain}/${org}/${app}/`;
       })()
     : undefined;
+
+  // Altinn 2 ServiceEngine — identifier starts with se_
+  const isServiceEngine = resource.identifier.startsWith('se_');
+  const serviceCodeRef = resource.resourceReferences?.find((r) => r.referenceType === 'ServiceCode');
+  const serviceEditionRef = resource.resourceReferences?.find((r) => r.referenceType === 'ServiceEditionCode');
+  const seBaseUrl = env === 'prod' ? 'https://www.altinn.no' : 'https://tt02.altinn.no';
+  const serviceEngineUrl =
+    isServiceEngine && serviceCodeRef?.reference && serviceEditionRef?.reference
+      ? `${seBaseUrl}/Pages/ServiceEngine/Start/StartService.aspx?ServiceEditionCode=${serviceEditionRef.reference}&ServiceCode=${serviceCodeRef.reference}`
+      : undefined;
 
   return (
     <>
@@ -360,12 +375,20 @@ export default function ResourcePage() {
           <Heading level={2} data-size="lg">
             {getText(resource.title, lang)}
           </Heading>
+          {isAltinnAppMigratedFromA2 && (
+            <Button variant="secondary" data-size="sm" disabled>
+              ⛔ {t('resource.goToApp')}
+            </Button>
+          )}
           {appUrl && (
-            <a
-              href={appUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href={appUrl} target="_blank" rel="noopener noreferrer">
+              <Button variant="primary" data-size="sm" asChild>
+                <span>{t('resource.goToApp')} ↗</span>
+              </Button>
+            </a>
+          )}
+          {serviceEngineUrl && (
+            <a href={serviceEngineUrl} target="_blank" rel="noopener noreferrer">
               <Button variant="primary" data-size="sm" asChild>
                 <span>{t('resource.goToApp')} ↗</span>
               </Button>

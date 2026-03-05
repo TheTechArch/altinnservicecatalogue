@@ -96,6 +96,7 @@ const translations: Record<string, Record<Lang, string>> = {
   'resource.rolesSection': { nb: 'Roller', en: 'Roles' },
   'resource.noAccessRights': { nb: 'Ingen tilgangsrettigheter funnet.', en: 'No access rights found.' },
   'resource.goToApp': { nb: 'Gå til app', en: 'Go to app' },
+  'resource.studioRepo': { nb: 'Kildekode i Altinn Studio', en: 'Source in Altinn Studio' },
 
   // AccessPackages (HomePage tab + PackagePage)
   'packages.search.placeholder': { nb: 'Søk i tilgangspakker...', en: 'Search access packages...' },

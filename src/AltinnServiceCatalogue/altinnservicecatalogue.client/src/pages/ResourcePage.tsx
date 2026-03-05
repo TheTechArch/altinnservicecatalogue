@@ -328,7 +328,7 @@ export default function ResourcePage() {
   const isAltinnAppMigratedFromA2 =
     resource.resourceType === 'AltinnApp' && resource.identifier.includes('_a2-');
 
-  // AltinnApp not migrated — build app URL from ApplicationId reference
+  // AltinnApp not migrated — build app URL and Studio repo URL from ApplicationId reference
   const appRef =
     resource.resourceType === 'AltinnApp' && !isAltinnAppMigratedFromA2
       ? resource.resourceReferences?.find((r) => r.referenceType === 'ApplicationId')
@@ -338,6 +338,9 @@ export default function ResourcePage() {
         const [org, app] = appRef.reference.split('/');
         return `https://${org}.apps.${domain}/${org}/${app}/`;
       })()
+    : undefined;
+  const studioRepoUrl = appRef?.reference
+    ? `https://altinn.studio/repos/${appRef.reference}`
     : undefined;
 
   // Altinn 2 ServiceEngine — identifier starts with se_
@@ -381,11 +384,20 @@ export default function ResourcePage() {
             </Button>
           )}
           {appUrl && (
-            <a href={appUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="primary" data-size="sm" asChild>
-                <span>{t('resource.goToApp')} ↗</span>
-              </Button>
-            </a>
+            <div className="flex items-center gap-2">
+              {studioRepoUrl && (
+                <a href={studioRepoUrl} target="_blank" rel="noopener noreferrer">
+                  <Button variant="secondary" data-size="sm" asChild>
+                    <span>{t('resource.studioRepo')} ↗</span>
+                  </Button>
+                </a>
+              )}
+              <a href={appUrl} target="_blank" rel="noopener noreferrer">
+                <Button variant="primary" data-size="sm" asChild>
+                  <span>{t('resource.goToApp')} ↗</span>
+                </Button>
+              </a>
+            </div>
           )}
           {serviceEngineUrl && (
             <a href={serviceEngineUrl} target="_blank" rel="noopener noreferrer">

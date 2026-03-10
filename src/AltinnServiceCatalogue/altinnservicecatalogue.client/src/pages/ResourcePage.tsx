@@ -10,7 +10,7 @@ import {
   Card,
   CardBlock,
 } from '@digdir/designsystemet-react';
-import type { ServiceResource, PolicyRule, PackageDto, RoleDto, ResourceRight } from '../types';
+import type { ServiceResource, PolicyRule, PackageDto, RoleDto, ResourceRight, AttributeMatch } from '../types';
 import { getText } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
@@ -22,17 +22,17 @@ function scopeLabel(urn: string): string {
   return last.charAt(0).toUpperCase() + last.slice(1);
 }
 
-function sortResources(resources: string[]): string[] {
+function sortResources(resources: AttributeMatch[]): AttributeMatch[] {
   return [...resources].sort((a, b) => {
-    const aIsMain = a.startsWith('urn:altinn:resource');
-    const bIsMain = b.startsWith('urn:altinn:resource');
+    const aIsMain = a.value.startsWith('urn:altinn:resource');
+    const bIsMain = b.value.startsWith('urn:altinn:resource');
     if (aIsMain && !bIsMain) return -1;
     if (!aIsMain && bIsMain) return 1;
     return 0;
   });
 }
 
-function RightsGroups({ rights, resourceLevelLabel }: { rights: import('../types').ResourceRight[]; resourceLevelLabel: string }) {
+function RightsGroups({ rights, resourceLevelLabel }: { rights: ResourceRight[]; resourceLevelLabel: string }) {
   // Sort each right's resource array so urn:altinn:resource is always first
   const sorted = rights.map((r) => ({ ...r, resource: sortResources(r.resource) }));
 
@@ -40,10 +40,10 @@ function RightsGroups({ rights, resourceLevelLabel }: { rights: import('../types
   const resourceLevel = sorted.filter((r) => r.resource.length < 2);
   const scoped = sorted.filter((r) => r.resource.length >= 2);
 
-  // Group scoped rights by the second resource URN (scope = sub-resource)
-  const scopeMap = new Map<string, import('../types').ResourceRight[]>();
+  // Group scoped rights by the second resource's value (scope = sub-resource)
+  const scopeMap = new Map<string, ResourceRight[]>();
   for (const right of scoped) {
-    const scope = right.resource[1];
+    const scope = right.resource[1].value;
     if (!scopeMap.has(scope)) scopeMap.set(scope, []);
     scopeMap.get(scope)!.push(right);
   }

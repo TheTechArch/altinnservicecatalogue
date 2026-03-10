@@ -176,11 +176,16 @@ export interface SubjectResourcesResponse {
 
 // Policy rights (v2 API)
 
+export interface AttributeMatch {
+  type: string;
+  value: string;
+}
+
 export interface ResourceRight {
   key: string;
   name: string;
-  resource: string[];
-  action: string;
+  resource: AttributeMatch[];
+  action: AttributeMatch;
 }
 
 // Policy rules

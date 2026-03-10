@@ -4,5 +4,6 @@
     <Build />
     <Deploy />
   </Project>
+  <Project Path="AltinnServiceCatalogue.McpServer/AltinnServiceCatalogue.McpServer.csproj" />
   <Project Path="AltinnServiceCatalogue.Server/AltinnServiceCatalogue.Server.csproj" />
 </Solution>

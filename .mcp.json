@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "altinn": {
+      "command": "dotnet",
+      "args": ["run", "--project", "src/AltinnServiceCatalogue/AltinnServiceCatalogue.McpServer"]
+    }
+  }
+}

@@ -73,7 +73,11 @@
       "mcp__altinn__get_resource_policy_rules",
       "mcp__altinn__get_organizations",
       "mcp__altinn__get_resource_policy_subjects",
-      "Bash(node -e \"console.log\\('hello'\\)\")"
+      "Bash(node -e \"console.log\\('hello'\\)\")",
+      "WebFetch(domain:github.com)",
+      "Bash(curl -s \"https://platform.altinn.no/resourceregistry/api/v1/resource/search?ResourceType=Systemresource\" -o /dev/null -w \"%{http_code}\")",
+      "Bash(curl -s \"https://platform.altinn.no/accessmanagement/api/v1/accesspackage\" | head -c 2000)",
+      "Bash(curl -s \"https://platform.altinn.no/accessmanagement/api/v1/lookup/packages/categories\" 2>/dev/null | head -c 2000 && echo \"---\" && curl -s \"https://altinn.github.io/docs/api/accesspackages/\" -o /dev/null -w \"%{http_code}\")"
     ],
     "additionalDirectories": [
       "\\tmp"

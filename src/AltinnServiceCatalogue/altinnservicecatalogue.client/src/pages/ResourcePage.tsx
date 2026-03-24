@@ -444,6 +444,19 @@ export default function ResourcePage() {
         </div>
       </section>
 
+      {/* Alerts */}
+      {!loadingRules && packageSubjects.length === 0 && (
+        <Alert data-color="warning" className="mb-6">
+          {t('resource.alert.noPackages')}
+        </Alert>
+      )}
+
+      {resource.accessListMode === 'Enabled' && (
+        <Alert data-color="info" className="mb-6">
+          {t('resource.alert.accessList')}
+        </Alert>
+      )}
+
       {/* Description */}
       {getText(resource.description, lang) && (
         <section className="mb-8">

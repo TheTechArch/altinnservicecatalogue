@@ -101,6 +101,16 @@ const translations: Record<string, Record<Lang, string>> = {
   'resource.goToApp': { nb: 'Gå til app', en: 'Go to app' },
   'resource.studioRepo': { nb: 'Kildekode i Altinn Studio', en: 'Source in Altinn Studio' },
 
+  // Alerts
+  'resource.alert.noPackages': {
+    nb: 'Tjenesten er ikke definert med tilgangspakker. Dette gjør at systembrukere har begrenset tilgang til disse tjenestene. Det betyr også at vanlige brukere med roller vil miste tilgang etter 01.01.2027 når rollene fjernes fra Altinn.',
+    en: 'This service is not defined with access packages. This means system users have limited access to these services. It also means that regular users with roles will lose access after 01.01.2027 when the roles are removed from Altinn.',
+  },
+  'resource.alert.accessList': {
+    nb: 'Tjenesten har aktivert tilgangsliste. Dette betyr at tjenesteeier har definert et begrenset sett med virksomheter som har tilgang.',
+    en: 'This service has access list enabled. This means the service owner has defined a limited set of organizations that have access.',
+  },
+
   // Security level
   'resource.securityLevel': { nb: 'Sikkerhetsnivå', en: 'Security level' },
   'resource.securityLevel.user': { nb: 'Bruker', en: 'User' },

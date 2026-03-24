@@ -26,6 +26,15 @@ export default function AboutPage() {
           {t('about.openApi')}
         </p>
 
+        <div
+          className="rounded-lg p-4"
+          style={{ backgroundColor: 'var(--ds-color-warning-surface-default)', border: '1px solid var(--ds-color-warning-border-default)' }}
+        >
+          <p style={{ color: 'var(--ds-color-neutral-text-default)', lineHeight: '1.7', margin: 0 }}>
+            {t('about.purpose')} {t('about.team')}
+          </p>
+        </div>
+
         <div>
           <p style={{ color: 'var(--ds-color-neutral-text-default)', lineHeight: '1.7' }}>
             {t('about.sourceCode')}

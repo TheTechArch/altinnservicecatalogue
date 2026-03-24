@@ -139,6 +139,10 @@ export default function ResourcePage() {
   const [packageInfo, setPackageInfo] = useState<Record<string, { id: string; name: string }>>({});
   const [roleInfo, setRoleInfo] = useState<Record<string, { id: string; name: string }>>({});
 
+  // Security level from XACML policy obligations
+  const [securityLevel, setSecurityLevel] = useState<{ userLevel: number | null; orgLevel: number | null } | null>(null);
+  const [loadingSecurityLevel, setLoadingSecurityLevel] = useState(false);
+
   // Possible rights (v2 API)
   const [rights, setRights] = useState<ResourceRight[]>([]);
   const [loadingRights, setLoadingRights] = useState(false);
@@ -222,6 +226,19 @@ export default function ResourcePage() {
       .catch(() => setRights([]))
       .finally(() => setLoadingRights(false));
   }, [id, env, lang, resource]);
+
+  function fetchSecurityLevel() {
+    if (!id) return;
+    setLoadingSecurityLevel(true);
+    fetch(`/api/v1/${env}/resource/${encodeURIComponent(id)}/policy/securitylevel`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.json() as Promise<{ userLevel: number | null; orgLevel: number | null }>;
+      })
+      .then(setSecurityLevel)
+      .catch(() => setSecurityLevel({ userLevel: null, orgLevel: null }))
+      .finally(() => setLoadingSecurityLevel(false));
+  }
 
   // Resolve package URN values to IDs and names
   useEffect(() => {
@@ -475,6 +492,45 @@ export default function ResourcePage() {
           </CardBlock>
         </Card>
       )}
+
+      {/* Security level from XACML policy */}
+      <Card className="mb-8">
+        <CardBlock className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <Heading level={3} data-size="xs">
+              {t('resource.securityLevel')}
+            </Heading>
+            {!securityLevel && !loadingSecurityLevel && (
+              <Button variant="secondary" data-size="sm" onClick={fetchSecurityLevel}>
+                {t('resource.securityLevel.fetch')}
+              </Button>
+            )}
+          </div>
+
+          {loadingSecurityLevel && (
+            <div className="flex justify-center py-4">
+              <Spinner aria-label={t('loading')} data-size="md" />
+            </div>
+          )}
+
+          {securityLevel && (
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">{t('resource.securityLevel.user')}:</span>
+                <Tag data-size="sm" data-color={securityLevel.userLevel ? 'info' : 'neutral'}>
+                  {securityLevel.userLevel ?? t('resource.securityLevel.notSet')}
+                </Tag>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">{t('resource.securityLevel.org')}:</span>
+                <Tag data-size="sm" data-color={securityLevel.orgLevel ? 'info' : 'neutral'}>
+                  {securityLevel.orgLevel ?? t('resource.securityLevel.notSet')}
+                </Tag>
+              </div>
+            </div>
+          )}
+        </CardBlock>
+      </Card>
 
       {/* Access rights: packages and roles */}
       <Card className="mb-8">

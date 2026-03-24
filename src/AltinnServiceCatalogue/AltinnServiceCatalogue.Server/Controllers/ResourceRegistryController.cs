@@ -1,3 +1,6 @@
+using System.Xml;
+using Altinn.Authorization.ABAC.Utils;
+using Altinn.Authorization.ABAC.Xacml;
 using Altinn.Authorization.Api.Contracts.ResourceRegistry;
 using Altinn.ResourceRegistry.Core.Models;
 using AltinnServiceCatalogue.Server.Configuration;
@@ -243,6 +246,61 @@ public class ResourceRegistryController(
         {
             logger.LogError(ex, "Upstream request failed for GetResourcePolicyRights({Id}) in {Environment}", id, environment);
             return StatusCode(StatusCodes.Status502BadGateway, "Upstream service unavailable");
+        }
+    }
+
+    [HttpGet("{id}/policy/securitylevel")]
+    [Produces("application/json")]
+    public async Task<IActionResult> GetResourcePolicySecurityLevel(
+        [FromRoute] string environment,
+        [FromRoute] string id,
+        CancellationToken ct)
+    {
+        if (!TryResolveBaseUrl(environment, out var baseUrl))
+            return BadRequest($"Unknown environment: {environment}");
+
+        try
+        {
+            await using var stream = await client.GetResourcePolicyAsync(baseUrl, id, ct);
+
+            using var reader = XmlReader.Create(stream, new XmlReaderSettings { Async = true });
+            var policy = XacmlParser.ParseXacmlPolicy(reader);
+
+            int? userLevel = null;
+            int? orgLevel = null;
+
+            foreach (var obligation in policy.ObligationExpressions)
+            {
+                foreach (var assignment in obligation.AttributeAssignmentExpressions)
+                {
+                    var category = assignment.Category?.ToString();
+                    if (assignment.Property is XacmlAttributeValue attrValue && category is not null)
+                    {
+                        if (category == "urn:altinn:minimum-authenticationlevel"
+                            && int.TryParse(attrValue.Value, out var uLevel))
+                        {
+                            userLevel = uLevel;
+                        }
+                        else if (category == "urn:altinn:minimum-authenticationlevel-org"
+                            && int.TryParse(attrValue.Value, out var oLevel))
+                        {
+                            orgLevel = oLevel;
+                        }
+                    }
+                }
+            }
+
+            return Ok(new { userLevel, orgLevel });
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Upstream request failed for GetResourcePolicySecurityLevel({Id}) in {Environment}", id, environment);
+            return StatusCode(StatusCodes.Status502BadGateway, "Upstream service unavailable");
+        }
+        catch (XmlException ex)
+        {
+            logger.LogError(ex, "Failed to parse XACML policy for {Id} in {Environment}", id, environment);
+            return StatusCode(StatusCodes.Status502BadGateway, "Failed to parse policy XML");
         }
     }
 

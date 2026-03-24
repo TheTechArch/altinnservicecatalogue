@@ -77,7 +77,15 @@
       "WebFetch(domain:github.com)",
       "Bash(curl -s \"https://platform.altinn.no/resourceregistry/api/v1/resource/search?ResourceType=Systemresource\" -o /dev/null -w \"%{http_code}\")",
       "Bash(curl -s \"https://platform.altinn.no/accessmanagement/api/v1/accesspackage\" | head -c 2000)",
-      "Bash(curl -s \"https://platform.altinn.no/accessmanagement/api/v1/lookup/packages/categories\" 2>/dev/null | head -c 2000 && echo \"---\" && curl -s \"https://altinn.github.io/docs/api/accesspackages/\" -o /dev/null -w \"%{http_code}\")"
+      "Bash(curl -s \"https://platform.altinn.no/accessmanagement/api/v1/lookup/packages/categories\" 2>/dev/null | head -c 2000 && echo \"---\" && curl -s \"https://altinn.github.io/docs/api/accesspackages/\" -o /dev/null -w \"%{http_code}\")",
+      "Bash(dotnet list:*)",
+      "Bash(dotnet package:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh search:*)",
+      "Bash(gh api:*)",
+      "Bash(mkdir -p /tmp/refltest)",
+      "Read(//tmp/**)",
+      "Bash(dotnet run:*)"
     ],
     "additionalDirectories": [
       "\\tmp"

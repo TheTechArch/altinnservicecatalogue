@@ -30,7 +30,7 @@ const SEARCH_DISPLAY_LIMIT = 100;
 function toggleArrayItem(arr: string[], item: string): string[] {
   return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item];
 }
-import type { Org, OrgList, ServiceResource, AreaGroupDto, RoleDto } from '../types';
+import type { Org, OrgList, ServiceResource, AreaGroupDto, RoleDto, PackageDto } from '../types';
 import { getText, OrgLogo } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
@@ -91,6 +91,10 @@ export default function HomePage() {
   const [loadingKeywords, setLoadingKeywords] = useState(true);
   const [errorKeywords, setErrorKeywords] = useState<string | null>(null);
   const [keywordSearch, setKeywordSearch] = useState('');
+
+  // Quick search state (hero)
+  const [quickSearch, setQuickSearch] = useState('');
+  const [quickSearchFocused, setQuickSearchFocused] = useState(false);
 
   // Advanced search tab state
   const [searchQuery, setSearchQuery] = useState('');
@@ -327,6 +331,35 @@ export default function HomePage() {
     searchAvailableFor.length > 0 || searchDelegable || searchVisible ||
     searchSelfIdentified || searchEnterprise || searchAccessList || searchMigratedAltinn2);
 
+  // Quick search results
+  const QUICK_SEARCH_LIMIT = 8;
+  const quickSearchResults = useMemo(() => {
+    if (!quickSearch || quickSearch.length < 2) return { services: [] as ServiceResource[], packages: [] as { pkg: PackageDto; areaName: string; groupName: string }[] };
+    const q = quickSearch.toLowerCase();
+
+    const services = resources
+      .filter((r) => r.identifier.toLowerCase().includes(q) || getText(r.title, lang).toLowerCase().includes(q))
+      .slice(0, QUICK_SEARCH_LIMIT);
+
+    const packages: { pkg: PackageDto; areaName: string; groupName: string }[] = [];
+    for (const g of groups) {
+      for (const a of g.areas ?? []) {
+        for (const p of a.packages ?? []) {
+          if (p.id.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.urn.toLowerCase().includes(q)) {
+            packages.push({ pkg: p, areaName: a.name, groupName: g.name });
+            if (packages.length >= QUICK_SEARCH_LIMIT) break;
+          }
+        }
+        if (packages.length >= QUICK_SEARCH_LIMIT) break;
+      }
+      if (packages.length >= QUICK_SEARCH_LIMIT) break;
+    }
+
+    return { services, packages };
+  }, [quickSearch, resources, groups, lang]);
+
+  const hasQuickResults = quickSearchResults.services.length > 0 || quickSearchResults.packages.length > 0;
+
   function clearSearchFilters() {
     setSearchQuery(''); setSearchTypes([]); setSearchStatus('');
     setSearchAvailableFor([]); setSearchDelegable(false); setSearchVisible(false);
@@ -357,6 +390,67 @@ export default function HomePage() {
         <Paragraph data-size="sm" className="mt-2 opacity-60">
           {t('home.hero.disclaimer')}
         </Paragraph>
+
+        {/* Quick search by ID */}
+        <div className="relative max-w-xl mx-auto mt-6">
+          <Search>
+            <SearchInput
+              aria-label={t('quicksearch.aria')}
+              placeholder={t('quicksearch.placeholder')}
+              value={quickSearch}
+              onChange={(e) => setQuickSearch(e.target.value)}
+              onFocus={() => setQuickSearchFocused(true)}
+              onBlur={() => setTimeout(() => setQuickSearchFocused(false), 200)}
+            />
+            <SearchClear onClick={() => setQuickSearch('')} />
+          </Search>
+
+          {quickSearch.length >= 2 && quickSearchFocused && (
+            <div className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+              {!hasQuickResults && (
+                <div className="p-4 text-center text-gray-500">{t('quicksearch.noResults')}</div>
+              )}
+
+              {quickSearchResults.services.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 dark:bg-gray-900">
+                    {t('quicksearch.services')}
+                  </div>
+                  {quickSearchResults.services.map((r) => (
+                    <Link
+                      key={r.identifier}
+                      to={`/resource/${encodeURIComponent(r.identifier)}`}
+                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 no-underline"
+                      onClick={() => setQuickSearch('')}
+                    >
+                      <div className="font-medium text-sm">{getText(r.title, lang)}</div>
+                      <div className="text-xs text-gray-500">{r.identifier}</div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {quickSearchResults.packages.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 dark:bg-gray-900">
+                    {t('quicksearch.packages')}
+                  </div>
+                  {quickSearchResults.packages.map(({ pkg, areaName, groupName }) => (
+                    <Link
+                      key={pkg.id}
+                      to={`/package/${encodeURIComponent(pkg.id)}`}
+                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 no-underline"
+                      onClick={() => setQuickSearch('')}
+                    >
+                      <div className="font-medium text-sm">{pkg.name}</div>
+                      <div className="text-xs text-gray-500">{groupName} &rsaquo; {areaName} &mdash; {pkg.id}</div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Tabs */}

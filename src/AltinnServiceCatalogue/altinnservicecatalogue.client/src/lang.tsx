@@ -22,7 +22,10 @@ const translations: Record<string, Record<Lang, string>> = {
   },
   'home.hero.source': { nb: 'Kilden er ', en: 'Source: ' },
   'home.hero.sourceText': { nb: 'Altinn sitt Ressursregister', en: "Altinn's Resource Registry" },
-  'home.hero.disclaimer': { nb: 'Dette er ikke et offisielt produkt fra Altinn.', en: 'This is not an official product from Altinn.' },
+  'home.hero.disclaimer': {
+    nb: 'Dette er ikke et offisielt produkt fra Altinn, men er laget av teamet bak Altinn autorisasjon for å vise mulighetene med våre åpne API.',
+    en: 'This is not an official product from Altinn, but is created by the team behind Altinn Authorization to showcase the possibilities of our open APIs.',
+  },
   'home.search.placeholder': { nb: 'Søk etter etat...', en: 'Search for agency...' },
   'home.search.aria': { nb: 'Søk etter etat', en: 'Search for agency' },
   'home.serviceOwners': { nb: 'Tjenesteeiere', en: 'Service owners' },
@@ -98,6 +101,13 @@ const translations: Record<string, Record<Lang, string>> = {
   'resource.goToApp': { nb: 'Gå til app', en: 'Go to app' },
   'resource.studioRepo': { nb: 'Kildekode i Altinn Studio', en: 'Source in Altinn Studio' },
 
+  // Security level
+  'resource.securityLevel': { nb: 'Sikkerhetsnivå', en: 'Security level' },
+  'resource.securityLevel.user': { nb: 'Bruker', en: 'User' },
+  'resource.securityLevel.org': { nb: 'Tjenesteeier', en: 'Service owner' },
+  'resource.securityLevel.fetch': { nb: 'Hent sikkerhetsnivå', en: 'Get security level' },
+  'resource.securityLevel.notSet': { nb: 'Ikke satt', en: 'Not set' },
+
   // AccessPackages (HomePage tab + PackagePage)
   'packages.search.placeholder': { nb: 'Søk i tilgangspakker...', en: 'Search access packages...' },
   'packages.search.aria': { nb: 'Søk i tilgangspakker', en: 'Search access packages' },
@@ -144,6 +154,13 @@ const translations: Record<string, Record<Lang, string>> = {
   'keyword.search.placeholder': { nb: 'Søk i tjenester...', en: 'Search services...' },
   'keyword.search.aria': { nb: 'Søk i tjenester', en: 'Search services' },
   'keyword.noMatch': { nb: 'Ingen tjenester samsvarer med søket ditt.', en: 'No services match your search.' },
+
+  // Quick search (hero)
+  'quicksearch.placeholder': { nb: 'Søk etter tjeneste-ID eller pakke-ID...', en: 'Search by service ID or package ID...' },
+  'quicksearch.aria': { nb: 'Hurtigsøk etter ID', en: 'Quick search by ID' },
+  'quicksearch.services': { nb: 'Tjenester', en: 'Services' },
+  'quicksearch.packages': { nb: 'Tilgangspakker', en: 'Access packages' },
+  'quicksearch.noResults': { nb: 'Ingen treff', en: 'No results' },
 
   // Advanced Search tab
   'home.tabs.search': { nb: 'Avansert søk', en: 'Advanced search' },
@@ -233,6 +250,14 @@ const translations: Record<string, Record<Lang, string>> = {
     en: 'The solution is built exclusively on open APIs provided by Altinn.',
   },
   'about.sourceCode': { nb: 'Kildekoden er tilgjengelig på GitHub:', en: 'The source code is available on GitHub:' },
+  'about.purpose': {
+    nb: 'Denne siden er laget for å demonstrere mulighetene med Altinn sine åpne API-er.',
+    en: 'This site is created to demonstrate the possibilities with Altinn\'s open APIs.',
+  },
+  'about.team': {
+    nb: 'Den er utviklet av teamet bak Altinn Ressursregister, men er ikke et offisielt støttet produkt.',
+    en: 'It is developed by the team behind Altinn Resource Registry, but is not an officially supported product.',
+  },
 
   // Common
   'yes': { nb: 'Ja', en: 'Yes' },

@@ -277,6 +277,22 @@ const translations: Record<string, Record<Lang, string>> = {
   'error.loadOrgs': { nb: 'Kunne ikke laste etater', en: 'Could not load agencies' },
   'error.loadData': { nb: 'Kunne ikke laste data', en: 'Could not load data' },
   'error.loadResource': { nb: 'Kunne ikke laste ressurs', en: 'Could not load resource' },
+
+  // Statistics tab
+  'home.tabs.statistics': { nb: 'Statistikk', en: 'Statistics' },
+  'stats.title': { nb: 'Sikkerhetsnivå for Altinn Studio-apper', en: 'Security level for Altinn Studio apps' },
+  'stats.description': { nb: 'Henter sikkerhetsnivå fra XACML-policy for alle Altinn Studio-apper (ekskluderer migrerte Altinn 2-apper).', en: 'Fetches security level from XACML policy for all Altinn Studio apps (excludes migrated Altinn 2 apps).' },
+  'stats.calculate': { nb: 'Beregn statistikk', en: 'Calculate statistics' },
+  'stats.calculating': { nb: 'Henter policyer og beregner...', en: 'Fetching policies and calculating...' },
+  'stats.totalApps': { nb: 'Totalt Altinn Studio-apper', en: 'Total Altinn Studio apps' },
+  'stats.level4': { nb: 'Sikkerhetsnivå 4', en: 'Security level 4' },
+  'stats.level3': { nb: 'Sikkerhetsnivå 3', en: 'Security level 3' },
+  'stats.level2': { nb: 'Sikkerhetsnivå 2', en: 'Security level 2' },
+  'stats.other': { nb: 'Annet / ikke satt', en: 'Other / not set' },
+  'stats.errors': { nb: 'Feil ved henting', en: 'Errors fetching' },
+  'stats.apps': { nb: 'apper', en: 'apps' },
+  'stats.showList': { nb: 'Vis liste', en: 'Show list' },
+  'stats.hideList': { nb: 'Skjul liste', en: 'Hide list' },
 };
 
 const LangContext = createContext<LangContextValue | null>(null);

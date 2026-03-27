@@ -30,7 +30,7 @@ const SEARCH_DISPLAY_LIMIT = 100;
 function toggleArrayItem(arr: string[], item: string): string[] {
   return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item];
 }
-import type { Org, OrgList, ServiceResource, AreaGroupDto, RoleDto, PackageDto } from '../types';
+import type { Org, OrgList, ServiceResource, AreaGroupDto, RoleDto, PackageDto, AuthLevelStatistics } from '../types';
 import { getText, OrgLogo } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
@@ -44,6 +44,7 @@ const TAB_PATHS: Record<string, string> = {
   '/roles': 'roles',
   '/keywords': 'keywords',
   '/search': 'search',
+  '/statistics': 'statistics',
 };
 
 const PATH_FOR_TAB: Record<string, string> = {
@@ -53,6 +54,7 @@ const PATH_FOR_TAB: Record<string, string> = {
   accessPackages: '/packages',
   roles: '/roles',
   keywords: '/keywords',
+  statistics: '/statistics',
 };
 
 export default function HomePage() {
@@ -91,6 +93,15 @@ export default function HomePage() {
   const [loadingKeywords, setLoadingKeywords] = useState(true);
   const [errorKeywords, setErrorKeywords] = useState<string | null>(null);
   const [keywordSearch, setKeywordSearch] = useState('');
+
+  // Statistics tab state
+  const [statsData, setStatsData] = useState<AuthLevelStatistics | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [errorStats, setErrorStats] = useState<string | null>(null);
+  const [showLevel4List, setShowLevel4List] = useState(false);
+  const [showLevel3List, setShowLevel3List] = useState(false);
+  const [showLevel2List, setShowLevel2List] = useState(false);
+  const [showOtherList, setShowOtherList] = useState(false);
 
   // Quick search state (hero)
   const [quickSearch, setQuickSearch] = useState('');
@@ -370,6 +381,20 @@ export default function HomePage() {
     setSearchAltinnStudioApps(false);
   }
 
+  function fetchAuthLevelStats() {
+    setLoadingStats(true);
+    setErrorStats(null);
+    setStatsData(null);
+    fetch(`/api/v1/${env}/resource/statistics/authlevel`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed: ${res.status}`);
+        return res.json() as Promise<AuthLevelStatistics>;
+      })
+      .then(setStatsData)
+      .catch((err) => setErrorStats(err.message))
+      .finally(() => setLoadingStats(false));
+  }
+
   return (
     <>
       {/* Hero */}
@@ -465,6 +490,7 @@ export default function HomePage() {
           <Tabs.Tab value="roles">{t('home.tabs.roles')}</Tabs.Tab>
           <Tabs.Tab value="keywords">{t('home.tabs.keywords')}</Tabs.Tab>
           <Tabs.Tab value="search">{t('home.tabs.search')}</Tabs.Tab>
+          <Tabs.Tab value="statistics">{t('home.tabs.statistics')}</Tabs.Tab>
         </Tabs.List>
 
         {/* Tab: Service owner */}
@@ -1025,6 +1051,206 @@ export default function HomePage() {
                   ))}
                 </div>
               </>
+            )}
+          </div>
+        </Tabs.Panel>
+
+        {/* Tab: Statistics */}
+        <Tabs.Panel value="statistics">
+          <div className="pt-6 max-w-4xl mx-auto">
+            <Heading level={2} data-size="md" className="mb-2">{t('stats.title')}</Heading>
+            <Paragraph className="mb-6" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+              {t('stats.description')}
+            </Paragraph>
+
+            {!statsData && !loadingStats && (
+              <Button data-size="md" onClick={fetchAuthLevelStats}>
+                {t('stats.calculate')}
+              </Button>
+            )}
+
+            {loadingStats && (
+              <div className="flex flex-col items-center gap-4 py-20">
+                <Spinner aria-label={t('stats.calculating')} data-size="lg" />
+                <Paragraph>{t('stats.calculating')}</Paragraph>
+              </div>
+            )}
+
+            {errorStats && (
+              <Alert data-color="danger" className="mb-6">
+                {t('error.loadData')}: {errorStats}
+              </Alert>
+            )}
+
+            {statsData && !loadingStats && (
+              <div className="space-y-6">
+                {/* Summary cards */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  <Card data-color="neutral">
+                    <CardBlock>
+                      <Heading level={3} data-size="2xl" className="text-center">{statsData.totalApps}</Heading>
+                      <Paragraph data-size="sm" className="text-center">{t('stats.totalApps')}</Paragraph>
+                    </CardBlock>
+                  </Card>
+                  <Card data-color="danger">
+                    <CardBlock>
+                      <Heading level={3} data-size="2xl" className="text-center">{statsData.level4Apps.length}</Heading>
+                      <Paragraph data-size="sm" className="text-center">{t('stats.level4')}</Paragraph>
+                    </CardBlock>
+                  </Card>
+                  <Card data-color="warning">
+                    <CardBlock>
+                      <Heading level={3} data-size="2xl" className="text-center">{statsData.level3Apps.length}</Heading>
+                      <Paragraph data-size="sm" className="text-center">{t('stats.level3')}</Paragraph>
+                    </CardBlock>
+                  </Card>
+                  <Card data-color="info">
+                    <CardBlock>
+                      <Heading level={3} data-size="2xl" className="text-center">{statsData.level2Apps.length}</Heading>
+                      <Paragraph data-size="sm" className="text-center">{t('stats.level2')}</Paragraph>
+                    </CardBlock>
+                  </Card>
+                  <Card data-color="neutral">
+                    <CardBlock>
+                      <Heading level={3} data-size="2xl" className="text-center">{statsData.otherApps.length}</Heading>
+                      <Paragraph data-size="sm" className="text-center">{t('stats.other')}</Paragraph>
+                    </CardBlock>
+                  </Card>
+                </div>
+
+                {statsData.errorCount > 0 && (
+                  <Alert data-color="warning">
+                    {t('stats.errors')}: {statsData.errorCount} {t('stats.apps')}
+                  </Alert>
+                )}
+
+                {/* Level 4 list */}
+                {statsData.level4Apps.length > 0 && (
+                  <div>
+                    <Button variant="secondary" data-size="sm" onClick={() => setShowLevel4List(!showLevel4List)} className="mb-3">
+                      {showLevel4List ? t('stats.hideList') : t('stats.showList')}: {t('stats.level4')} ({statsData.level4Apps.length})
+                    </Button>
+                    {showLevel4List && (
+                      <div className="grid gap-2">
+                        {statsData.level4Apps.map((app) => (
+                          <Card key={app.identifier} data-color="danger" className="p-0">
+                            <CardBlock>
+                              <div className="flex items-center justify-between gap-4">
+                                <div>
+                                  <Link to={`/resource/${app.identifier}`} className="font-semibold">
+                                    {getText(app.title, lang) || app.identifier}
+                                  </Link>
+                                  <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                                    {app.identifier} — {app.hasCompetentAuthority?.orgcode}
+                                  </Paragraph>
+                                </div>
+                                <Tag data-size="sm" data-color="danger">Nivå 4</Tag>
+                              </div>
+                            </CardBlock>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Level 3 list */}
+                {statsData.level3Apps.length > 0 && (
+                  <div>
+                    <Button variant="secondary" data-size="sm" onClick={() => setShowLevel3List(!showLevel3List)} className="mb-3">
+                      {showLevel3List ? t('stats.hideList') : t('stats.showList')}: {t('stats.level3')} ({statsData.level3Apps.length})
+                    </Button>
+                    {showLevel3List && (
+                      <div className="grid gap-2">
+                        {statsData.level3Apps.map((app) => (
+                          <Card key={app.identifier} data-color="warning" className="p-0">
+                            <CardBlock>
+                              <div className="flex items-center justify-between gap-4">
+                                <div>
+                                  <Link to={`/resource/${app.identifier}`} className="font-semibold">
+                                    {getText(app.title, lang) || app.identifier}
+                                  </Link>
+                                  <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                                    {app.identifier} — {app.hasCompetentAuthority?.orgcode}
+                                  </Paragraph>
+                                </div>
+                                <Tag data-size="sm" data-color="warning">Nivå 3</Tag>
+                              </div>
+                            </CardBlock>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Level 2 list */}
+                {statsData.level2Apps.length > 0 && (
+                  <div>
+                    <Button variant="secondary" data-size="sm" onClick={() => setShowLevel2List(!showLevel2List)} className="mb-3">
+                      {showLevel2List ? t('stats.hideList') : t('stats.showList')}: {t('stats.level2')} ({statsData.level2Apps.length})
+                    </Button>
+                    {showLevel2List && (
+                      <div className="grid gap-2">
+                        {statsData.level2Apps.map((app) => (
+                          <Card key={app.identifier} data-color="info" className="p-0">
+                            <CardBlock>
+                              <div className="flex items-center justify-between gap-4">
+                                <div>
+                                  <Link to={`/resource/${app.identifier}`} className="font-semibold">
+                                    {getText(app.title, lang) || app.identifier}
+                                  </Link>
+                                  <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                                    {app.identifier} — {app.hasCompetentAuthority?.orgcode}
+                                  </Paragraph>
+                                </div>
+                                <Tag data-size="sm" data-color="info">Nivå 2</Tag>
+                              </div>
+                            </CardBlock>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Other / not set list */}
+                {statsData.otherApps.length > 0 && (
+                  <div>
+                    <Button variant="secondary" data-size="sm" onClick={() => setShowOtherList(!showOtherList)} className="mb-3">
+                      {showOtherList ? t('stats.hideList') : t('stats.showList')}: {t('stats.other')} ({statsData.otherApps.length})
+                    </Button>
+                    {showOtherList && (
+                      <div className="grid gap-2">
+                        {statsData.otherApps.map((app) => (
+                          <Card key={app.identifier} data-color="neutral" className="p-0">
+                            <CardBlock>
+                              <div className="flex items-center justify-between gap-4">
+                                <div>
+                                  <Link to={`/resource/${app.identifier}`} className="font-semibold">
+                                    {getText(app.title, lang) || app.identifier}
+                                  </Link>
+                                  <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                                    {app.identifier} — {app.hasCompetentAuthority?.orgcode}
+                                  </Paragraph>
+                                </div>
+                                <Tag data-size="sm" data-color="neutral">
+                                  {app.userLevel !== null ? `Nivå ${app.userLevel}` : '—'}
+                                </Tag>
+                              </div>
+                            </CardBlock>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Recalculate button */}
+                <Button variant="secondary" data-size="sm" onClick={fetchAuthLevelStats}>
+                  {t('stats.calculate')}
+                </Button>
+              </div>
             )}
           </div>
         </Tabs.Panel>

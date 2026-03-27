@@ -347,8 +347,141 @@ public class ResourceRegistryController(
         }
     }
 
+    [HttpGet("statistics/authlevel")]
+    [Produces("application/json")]
+    public async Task<IActionResult> GetAuthLevelStatistics(
+        [FromRoute] string environment,
+        CancellationToken ct)
+    {
+        if (!TryResolveBaseUrl(environment, out var baseUrl))
+            return BadRequest($"Unknown environment: {environment}");
+
+        try
+        {
+            // Get all resources including apps
+            var allResources = await cacheService.GetResourceListAsync(baseUrl, includeApps: true, includeAltinn2: false, ct);
+
+            // Filter to Altinn Studio apps (AltinnApp without _a2- in identifier)
+            var studioApps = allResources
+                .Where(r => r.ResourceType == Altinn.Authorization.Api.Contracts.ResourceType.AltinnApp
+                    && r.Identifier is not null && !r.Identifier.Contains("_a2-"))
+                .ToList();
+
+            // Fetch security levels in parallel (throttled to avoid overwhelming upstream)
+            const int maxConcurrency = 20;
+            using var semaphore = new SemaphoreSlim(maxConcurrency);
+
+            var tasks = studioApps.Select(async app =>
+            {
+                await semaphore.WaitAsync(ct);
+                try
+                {
+                    var levels = await ParseSecurityLevel(baseUrl, app.Identifier!, ct);
+                    return new AppAuthLevelEntry
+                    {
+                        Identifier = app.Identifier!,
+                        Title = app.Title,
+                        HasCompetentAuthority = app.HasCompetentAuthority,
+                        UserLevel = levels.userLevel,
+                        OrgLevel = levels.orgLevel,
+                    };
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to fetch policy for {Id}", app.Identifier);
+                    return new AppAuthLevelEntry
+                    {
+                        Identifier = app.Identifier!,
+                        Title = app.Title,
+                        HasCompetentAuthority = app.HasCompetentAuthority,
+                        UserLevel = null,
+                        OrgLevel = null,
+                        Error = true,
+                    };
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+
+            var entries = await Task.WhenAll(tasks);
+            var entryList = entries.ToList();
+
+            var result = new AuthLevelStatistics
+            {
+                TotalApps = entryList.Count,
+                Level4Apps = entryList.Where(e => e.UserLevel == 4).ToList(),
+                Level3Apps = entryList.Where(e => e.UserLevel == 3).ToList(),
+                Level2Apps = entryList.Where(e => e.UserLevel == 2).ToList(),
+                OtherApps = entryList.Where(e => e.UserLevel is null or 0 or 1).ToList(),
+                ErrorCount = entryList.Count(e => e.Error),
+            };
+
+            return Ok(result);
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Failed to compute auth level statistics in {Environment}", environment);
+            return StatusCode(StatusCodes.Status502BadGateway, "Upstream service unavailable");
+        }
+    }
+
+    private async Task<(int? userLevel, int? orgLevel)> ParseSecurityLevel(string baseUrl, string id, CancellationToken ct)
+    {
+        await using var stream = await client.GetResourcePolicyAsync(baseUrl, id, ct);
+        using var reader = XmlReader.Create(stream, new XmlReaderSettings { Async = true });
+        var policy = XacmlParser.ParseXacmlPolicy(reader);
+
+        int? userLevel = null;
+        int? orgLevel = null;
+
+        foreach (var obligation in policy.ObligationExpressions)
+        {
+            foreach (var assignment in obligation.AttributeAssignmentExpressions)
+            {
+                var category = assignment.Category?.ToString();
+                if (assignment.Property is XacmlAttributeValue attrValue && category is not null)
+                {
+                    if (category == "urn:altinn:minimum-authenticationlevel"
+                        && int.TryParse(attrValue.Value, out var uLevel))
+                    {
+                        userLevel = uLevel;
+                    }
+                    else if (category == "urn:altinn:minimum-authenticationlevel-org"
+                        && int.TryParse(attrValue.Value, out var oLevel))
+                    {
+                        orgLevel = oLevel;
+                    }
+                }
+            }
+        }
+
+        return (userLevel, orgLevel);
+    }
+
     private bool TryResolveBaseUrl(string environment, out string baseUrl)
     {
         return _options.Environments.TryGetValue(environment, out baseUrl!);
     }
+}
+
+public class AppAuthLevelEntry
+{
+    public string Identifier { get; set; } = string.Empty;
+    public Dictionary<string, string>? Title { get; set; }
+    public CompetentAuthority? HasCompetentAuthority { get; set; }
+    public int? UserLevel { get; set; }
+    public int? OrgLevel { get; set; }
+    public bool Error { get; set; }
+}
+
+public class AuthLevelStatistics
+{
+    public int TotalApps { get; set; }
+    public List<AppAuthLevelEntry> Level4Apps { get; set; } = [];
+    public List<AppAuthLevelEntry> Level3Apps { get; set; } = [];
+    public List<AppAuthLevelEntry> Level2Apps { get; set; } = [];
+    public List<AppAuthLevelEntry> OtherApps { get; set; } = [];
+    public int ErrorCount { get; set; }
 }

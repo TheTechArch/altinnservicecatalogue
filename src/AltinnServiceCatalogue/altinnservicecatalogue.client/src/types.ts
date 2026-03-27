@@ -205,3 +205,23 @@ export interface PolicyRule {
   action: PolicyRuleAction;
   resource: { type: string; value: string }[];
 }
+
+// Statistics types
+
+export interface AppAuthLevelEntry {
+  identifier: string;
+  title: Record<string, string>;
+  hasCompetentAuthority?: CompetentAuthority;
+  userLevel: number | null;
+  orgLevel: number | null;
+  error: boolean;
+}
+
+export interface AuthLevelStatistics {
+  totalApps: number;
+  level4Apps: AppAuthLevelEntry[];
+  level3Apps: AppAuthLevelEntry[];
+  level2Apps: AppAuthLevelEntry[];
+  otherApps: AppAuthLevelEntry[];
+  errorCount: number;
+}

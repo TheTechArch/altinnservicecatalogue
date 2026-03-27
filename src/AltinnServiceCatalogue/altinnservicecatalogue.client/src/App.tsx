@@ -21,6 +21,7 @@ function App() {
         <Route path="packages" element={<HomePage />} />
         <Route path="roles" element={<HomePage />} />
         <Route path="keywords" element={<HomePage />} />
+        <Route path="statistics" element={<HomePage />} />
         <Route path="keyword/:word" element={<KeywordPage />} />
         <Route path="org/:orgCode" element={<OrgPage />} />
         <Route path="type/:resourceType" element={<ResourceTypePage />} />

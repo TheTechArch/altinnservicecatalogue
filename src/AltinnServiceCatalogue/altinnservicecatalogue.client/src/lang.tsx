@@ -188,6 +188,7 @@ const translations: Record<string, Record<Lang, string>> = {
   'search.enterpriseUsers': { nb: 'Virksomhetsbrukere', en: 'Enterprise users' },
   'search.accessListEnabled': { nb: 'Tilgangsliste aktivert', en: 'Access list enabled' },
   'search.migratedFromAltinn2': { nb: 'Migrert fra Altinn 2', en: 'Migrated from Altinn 2' },
+  'search.altinnStudioApps': { nb: 'Kun Altinn Studio-apper', en: 'Only Altinn Studio apps' },
   'search.clearFilters': { nb: 'Nullstill filtre', en: 'Clear filters' },
   'search.results': { nb: 'tjenester', en: 'services' },
   'search.noResults': { nb: 'Ingen tjenester samsvarer med filtrene dine.', en: 'No services match your filters.' },

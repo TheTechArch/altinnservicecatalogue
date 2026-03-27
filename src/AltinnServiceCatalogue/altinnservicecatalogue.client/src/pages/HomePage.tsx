@@ -107,6 +107,7 @@ export default function HomePage() {
   const [searchEnterprise, setSearchEnterprise] = useState(false);
   const [searchAccessList, setSearchAccessList] = useState(false);
   const [searchMigratedAltinn2, setSearchMigratedAltinn2] = useState(false);
+  const [searchAltinnStudioApps, setSearchAltinnStudioApps] = useState(false);
 
   // Fetch orgs
   useEffect(() => {
@@ -322,14 +323,15 @@ export default function HomePage() {
       if (searchEnterprise && !r.enterpriseUserEnabled) return false;
       if (searchAccessList && r.accessListMode !== 'Enabled') return false;
       if (searchMigratedAltinn2 && !r.resourceReferences?.some((ref) => ref.referenceType === 'ServiceCode')) return false;
+      if (searchAltinnStudioApps && !(r.resourceType === 'AltinnApp' && !r.identifier.includes('_a2-'))) return false;
       return true;
     });
   }, [resources, searchQuery, searchTypes, searchStatus, searchAvailableFor,
-    searchDelegable, searchVisible, searchSelfIdentified, searchEnterprise, searchAccessList, searchMigratedAltinn2, lang]);
+    searchDelegable, searchVisible, searchSelfIdentified, searchEnterprise, searchAccessList, searchMigratedAltinn2, searchAltinnStudioApps, lang]);
 
   const hasActiveFilters = !!(searchQuery || searchTypes.length > 0 || searchStatus ||
     searchAvailableFor.length > 0 || searchDelegable || searchVisible ||
-    searchSelfIdentified || searchEnterprise || searchAccessList || searchMigratedAltinn2);
+    searchSelfIdentified || searchEnterprise || searchAccessList || searchMigratedAltinn2 || searchAltinnStudioApps);
 
   // Quick search results
   const QUICK_SEARCH_LIMIT = 8;
@@ -365,6 +367,7 @@ export default function HomePage() {
     setSearchAvailableFor([]); setSearchDelegable(false); setSearchVisible(false);
     setSearchSelfIdentified(false); setSearchEnterprise(false); setSearchAccessList(false);
     setSearchMigratedAltinn2(false);
+    setSearchAltinnStudioApps(false);
   }
 
   return (
@@ -900,6 +903,12 @@ export default function HomePage() {
                       data-size="sm"
                       checked={searchMigratedAltinn2}
                       onChange={(e) => setSearchMigratedAltinn2((e.target as HTMLInputElement).checked)}
+                    />
+                    <Checkbox
+                      label={t('search.altinnStudioApps')}
+                      data-size="sm"
+                      checked={searchAltinnStudioApps}
+                      onChange={(e) => setSearchAltinnStudioApps((e.target as HTMLInputElement).checked)}
                     />
                   </Fieldset>
                 </aside>

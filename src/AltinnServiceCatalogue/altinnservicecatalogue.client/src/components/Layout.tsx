@@ -1,6 +1,7 @@
 import { Link, Outlet } from 'react-router-dom';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
+import { useTheme, type ColorScheme } from '../theme';
 
 function FlagNorway() {
   return (
@@ -29,6 +30,13 @@ function FlagUK() {
 export default function Layout() {
   const { lang, setLang, t } = useLang();
   const { env, setEnv } = useEnv();
+  const { colorScheme, setColorScheme } = useTheme();
+
+  const themeOptions: { value: ColorScheme; icon: string }[] = [
+    { value: 'light', icon: '☀️' },
+    { value: 'dark', icon: '🌙' },
+    { value: 'auto', icon: '💻' },
+  ];
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--ds-color-neutral-background-tinted)' }}>
@@ -82,6 +90,20 @@ export default function Layout() {
               >
                 <FlagUK />
               </button>
+            </div>
+            <div className="flex gap-1 items-center">
+              {themeOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setColorScheme(opt.value)}
+                  className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${colorScheme === opt.value ? 'bg-white/20 text-white ring-1 ring-white/50' : 'text-white/60 hover:text-white'}`}
+                  aria-label={t(`theme.${opt.value}`)}
+                  title={t(`theme.${opt.value}`)}
+                >
+                  <span aria-hidden="true">{opt.icon}</span>
+                  <span className="hidden sm:inline">{t(`theme.${opt.value}`)}</span>
+                </button>
+              ))}
             </div>
           </div>
         </div>

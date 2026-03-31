@@ -270,6 +270,11 @@ const translations: Record<string, Record<Lang, string>> = {
     en: 'It is developed by the team behind Altinn Resource Registry, but is not an officially supported product.',
   },
 
+  // Theme
+  'theme.light': { nb: 'Lys', en: 'Light' },
+  'theme.dark': { nb: 'Mørk', en: 'Dark' },
+  'theme.auto': { nb: 'Auto', en: 'Auto' },
+
   // Common
   'yes': { nb: 'Ja', en: 'Yes' },
   'no': { nb: 'Nei', en: 'No' },

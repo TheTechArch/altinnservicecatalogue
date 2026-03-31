@@ -512,25 +512,28 @@ export default function HomePage() {
           </Search>
 
           {quickSearch.length >= 2 && quickSearchFocused && (
-            <div className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+            <div className="absolute z-50 left-0 right-0 mt-1 rounded-lg shadow-lg max-h-96 overflow-y-auto" style={{ backgroundColor: 'var(--ds-color-neutral-background-default)', border: '1px solid var(--ds-color-neutral-border-default)' }}>
               {!hasQuickResults && (
-                <div className="p-4 text-center text-gray-500">{t('quicksearch.noResults')}</div>
+                <div className="p-4 text-center" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>{t('quicksearch.noResults')}</div>
               )}
 
               {quickSearchResults.services.length > 0 && (
                 <div>
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 dark:bg-gray-900">
+                  <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--ds-color-neutral-text-subtle)', backgroundColor: 'var(--ds-color-neutral-surface-default)' }}>
                     {t('quicksearch.services')}
                   </div>
                   {quickSearchResults.services.map((r) => (
                     <Link
                       key={r.identifier}
                       to={`/resource/${encodeURIComponent(r.identifier)}`}
-                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 no-underline"
+                      className="block px-4 py-2 no-underline"
+                      style={{ color: 'var(--ds-color-neutral-text-default)' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--ds-color-neutral-surface-hover)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       onClick={() => setQuickSearch('')}
                     >
                       <div className="font-medium text-sm">{getText(r.title, lang)}</div>
-                      <div className="text-xs text-gray-500">{r.identifier}</div>
+                      <div className="text-xs" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>{r.identifier}</div>
                     </Link>
                   ))}
                 </div>
@@ -538,18 +541,21 @@ export default function HomePage() {
 
               {quickSearchResults.packages.length > 0 && (
                 <div>
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 dark:bg-gray-900">
+                  <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--ds-color-neutral-text-subtle)', backgroundColor: 'var(--ds-color-neutral-surface-default)' }}>
                     {t('quicksearch.packages')}
                   </div>
                   {quickSearchResults.packages.map(({ pkg, areaName, groupName }) => (
                     <Link
                       key={pkg.id}
                       to={`/package/${encodeURIComponent(pkg.id)}`}
-                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 no-underline"
+                      className="block px-4 py-2 no-underline"
+                      style={{ color: 'var(--ds-color-neutral-text-default)' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--ds-color-neutral-surface-hover)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       onClick={() => setQuickSearch('')}
                     >
                       <div className="font-medium text-sm">{pkg.name}</div>
-                      <div className="text-xs text-gray-500">{groupName} &rsaquo; {areaName} &mdash; {pkg.id}</div>
+                      <div className="text-xs" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>{groupName} &rsaquo; {areaName} &mdash; {pkg.id}</div>
                     </Link>
                   ))}
                 </div>
@@ -617,7 +623,7 @@ export default function HomePage() {
                       <Link key={org.code} to={`/org/${org.code}`} className="no-underline">
                         <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                           <CardBlock className="flex flex-col items-center text-center p-4 gap-3">
-                            <div className="w-16 h-16 flex items-center justify-center rounded-full bg-gray-100 overflow-hidden flex-shrink-0">
+                            <div className="w-16 h-16 flex items-center justify-center rounded-full overflow-hidden flex-shrink-0" style={{ backgroundColor: 'var(--ds-color-neutral-surface-default)' }}>
                               {org.logo ? (
                                 <OrgLogo src={org.logo} alt={getText(org.name, lang)} fallback={org.code} />
                               ) : (

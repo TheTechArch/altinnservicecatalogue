@@ -86,7 +86,9 @@
       "Bash(mkdir -p /tmp/refltest)",
       "Read(//tmp/**)",
       "Bash(dotnet run:*)",
-      "Bash(grep -r AltinnApp /c/repos/altinnservicecatalogue/src/AltinnServiceCatalogue/altinnservicecatalogue.client/src/ --include=*.tsx --include=*.ts)"
+      "Bash(grep -r AltinnApp /c/repos/altinnservicecatalogue/src/AltinnServiceCatalogue/altinnservicecatalogue.client/src/ --include=*.tsx --include=*.ts)",
+      "Bash(grep -r dark c:/repos/altinnservicecatalogue/src/AltinnServiceCatalogue/altinnservicecatalogue.client/node_modules/@digdir/designsystemet-theme/ --include=*.css -l)",
+      "Bash(npx vite:*)"
     ],
     "additionalDirectories": [
       "\\tmp"

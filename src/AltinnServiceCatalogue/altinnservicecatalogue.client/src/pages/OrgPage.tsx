@@ -125,7 +125,7 @@ export default function OrgPage() {
           <section className="mb-8">
             <div className="flex items-center gap-4">
               {org.logo && (
-                <div className="w-14 h-14 flex items-center justify-center rounded-full bg-gray-100 overflow-hidden flex-shrink-0">
+                <div className="w-14 h-14 flex items-center justify-center rounded-full overflow-hidden flex-shrink-0" style={{ backgroundColor: 'var(--ds-color-neutral-surface-default)' }}>
                   <OrgLogo src={org.logo} alt={getText(org.name, lang)} fallback={orgCode!} />
                 </div>
               )}

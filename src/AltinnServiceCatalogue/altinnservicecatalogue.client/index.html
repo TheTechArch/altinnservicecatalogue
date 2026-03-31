@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-color-scheme="auto">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -16,6 +16,7 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>try{var s=localStorage.getItem('colorScheme');if(s==='light'||s==='dark'||s==='auto')document.documentElement.setAttribute('data-color-scheme',s)}catch(e){}</script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

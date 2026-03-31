@@ -225,3 +225,11 @@ export interface AuthLevelStatistics {
   otherApps: AppAuthLevelEntry[];
   errorCount: number;
 }
+
+export interface StatsJobStatus {
+  status: 'running' | 'done' | 'error' | 'not_started';
+  progress?: number;
+  total?: number;
+  result?: AuthLevelStatistics;
+  error?: string;
+}

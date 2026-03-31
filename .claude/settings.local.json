@@ -85,7 +85,8 @@
       "Bash(gh api:*)",
       "Bash(mkdir -p /tmp/refltest)",
       "Read(//tmp/**)",
-      "Bash(dotnet run:*)"
+      "Bash(dotnet run:*)",
+      "Bash(grep -r AltinnApp /c/repos/altinnservicecatalogue/src/AltinnServiceCatalogue/altinnservicecatalogue.client/src/ --include=*.tsx --include=*.ts)"
     ],
     "additionalDirectories": [
       "\\tmp"

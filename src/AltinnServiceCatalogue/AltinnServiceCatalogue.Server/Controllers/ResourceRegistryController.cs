@@ -6,6 +6,7 @@ using Altinn.ResourceRegistry.Core.Models;
 using AltinnServiceCatalogue.Server.Configuration;
 using AltinnServiceCatalogue.Server.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace AltinnServiceCatalogue.Server.Controllers;
@@ -15,10 +16,12 @@ namespace AltinnServiceCatalogue.Server.Controllers;
 public class ResourceRegistryController(
     IResourceRegistryClient client,
     IResourceCacheService cacheService,
+    IMemoryCache memoryCache,
     IOptions<ResourceRegistryOptions> options,
     ILogger<ResourceRegistryController> logger) : ControllerBase
 {
     private readonly ResourceRegistryOptions _options = options.Value;
+    private static readonly TimeSpan PolicyCacheDuration = TimeSpan.FromMinutes(30);
 
     [HttpGet("resourcelist")]
     [ProducesResponseType<List<ServiceResource>>(StatusCodes.Status200OK)]
@@ -347,88 +350,148 @@ public class ResourceRegistryController(
         }
     }
 
-    [HttpGet("statistics/authlevel")]
+    // ── Background job: start computation ──
+
+    [HttpPost("statistics/authlevel/start")]
     [Produces("application/json")]
-    public async Task<IActionResult> GetAuthLevelStatistics(
+    public IActionResult StartAuthLevelStatistics(
         [FromRoute] string environment,
-        CancellationToken ct)
+        [FromQuery] string kind = "apps")
     {
         if (!TryResolveBaseUrl(environment, out var baseUrl))
             return BadRequest($"Unknown environment: {environment}");
 
-        try
+        var jobKey = $"stats-job-{environment}-{kind}";
+
+        // If a completed result already exists in cache, return it immediately
+        if (memoryCache.TryGetValue(jobKey, out StatsJob? existing) && existing?.Status == "done")
+            return Ok(new { jobId = jobKey, status = "done" });
+
+        // If already running, don't start another
+        if (existing?.Status == "running")
+            return Ok(new { jobId = jobKey, status = "running", progress = existing.Progress, total = existing.Total });
+
+        var job = new StatsJob { Status = "running" };
+        memoryCache.Set(jobKey, job, TimeSpan.FromMinutes(30));
+
+        // Fire-and-forget background work
+        _ = Task.Run(async () =>
         {
-            // Get all resources including apps
-            var allResources = await cacheService.GetResourceListAsync(baseUrl, includeApps: true, includeAltinn2: false, ct);
-
-            // Filter to Altinn Studio apps (AltinnApp without _a2- in identifier)
-            var studioApps = allResources
-                .Where(r => r.ResourceType == Altinn.Authorization.Api.Contracts.ResourceType.AltinnApp
-                    && r.Identifier is not null && !r.Identifier.Contains("_a2-"))
-                .ToList();
-
-            // Fetch security levels in parallel (throttled to avoid overwhelming upstream)
-            const int maxConcurrency = 20;
-            using var semaphore = new SemaphoreSlim(maxConcurrency);
-
-            var tasks = studioApps.Select(async app =>
+            try
             {
-                await semaphore.WaitAsync(ct);
-                try
-                {
-                    var levels = await ParseSecurityLevel(baseUrl, app.Identifier!, ct);
-                    return new AppAuthLevelEntry
-                    {
-                        Identifier = app.Identifier!,
-                        Title = app.Title,
-                        HasCompetentAuthority = app.HasCompetentAuthority,
-                        UserLevel = levels.userLevel,
-                        OrgLevel = levels.orgLevel,
-                    };
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to fetch policy for {Id}", app.Identifier);
-                    return new AppAuthLevelEntry
-                    {
-                        Identifier = app.Identifier!,
-                        Title = app.Title,
-                        HasCompetentAuthority = app.HasCompetentAuthority,
-                        UserLevel = null,
-                        OrgLevel = null,
-                        Error = true,
-                    };
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            });
+                var allResources = await cacheService.GetResourceListAsync(baseUrl, includeApps: true, includeAltinn2: kind == "resources", CancellationToken.None);
 
-            var entries = await Task.WhenAll(tasks);
-            var entryList = entries.ToList();
+                List<ServiceResource> filtered;
+                if (kind == "resources")
+                {
+                    filtered = allResources
+                        .Where(r => r.ResourceType != Altinn.Authorization.Api.Contracts.ResourceType.AltinnApp
+                            && r.Identifier is not null)
+                        .ToList();
+                }
+                else
+                {
+                    filtered = allResources
+                        .Where(r => r.ResourceType == Altinn.Authorization.Api.Contracts.ResourceType.AltinnApp
+                            && r.Identifier is not null && !r.Identifier.Contains("_a2-"))
+                        .ToList();
+                }
 
-            var result = new AuthLevelStatistics
+                job.Total = filtered.Count;
+
+                const int maxConcurrency = 20;
+                using var semaphore = new SemaphoreSlim(maxConcurrency);
+
+                var tasks = filtered.Select(async resource =>
+                {
+                    await semaphore.WaitAsync(CancellationToken.None);
+                    try
+                    {
+                        var levels = await ParseSecurityLevel(baseUrl, resource.Identifier!, CancellationToken.None);
+                        Interlocked.Increment(ref job.Progress);
+                        return new AppAuthLevelEntry
+                        {
+                            Identifier = resource.Identifier!,
+                            Title = resource.Title,
+                            HasCompetentAuthority = resource.HasCompetentAuthority,
+                            UserLevel = levels.userLevel,
+                            OrgLevel = levels.orgLevel,
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to fetch policy for {Id}", resource.Identifier);
+                        Interlocked.Increment(ref job.Progress);
+                        return new AppAuthLevelEntry
+                        {
+                            Identifier = resource.Identifier!,
+                            Title = resource.Title,
+                            HasCompetentAuthority = resource.HasCompetentAuthority,
+                            UserLevel = null,
+                            OrgLevel = null,
+                            Error = true,
+                        };
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                });
+
+                var entries = await Task.WhenAll(tasks);
+                var entryList = entries.ToList();
+
+                job.Result = new AuthLevelStatistics
+                {
+                    TotalApps = entryList.Count,
+                    Level4Apps = entryList.Where(e => e.UserLevel == 4).ToList(),
+                    Level3Apps = entryList.Where(e => e.UserLevel == 3).ToList(),
+                    Level2Apps = entryList.Where(e => e.UserLevel == 2).ToList(),
+                    OtherApps = entryList.Where(e => e.UserLevel is null or 0 or 1).ToList(),
+                    ErrorCount = entryList.Count(e => e.Error),
+                };
+                job.Status = "done";
+            }
+            catch (Exception ex)
             {
-                TotalApps = entryList.Count,
-                Level4Apps = entryList.Where(e => e.UserLevel == 4).ToList(),
-                Level3Apps = entryList.Where(e => e.UserLevel == 3).ToList(),
-                Level2Apps = entryList.Where(e => e.UserLevel == 2).ToList(),
-                OtherApps = entryList.Where(e => e.UserLevel is null or 0 or 1).ToList(),
-                ErrorCount = entryList.Count(e => e.Error),
-            };
+                logger.LogError(ex, "Background stats job failed for {Environment}/{Kind}", environment, kind);
+                job.Status = "error";
+                job.ErrorMessage = ex.Message;
+            }
+        });
 
-            return Ok(result);
-        }
-        catch (HttpRequestException ex)
-        {
-            logger.LogError(ex, "Failed to compute auth level statistics in {Environment}", environment);
-            return StatusCode(StatusCodes.Status502BadGateway, "Upstream service unavailable");
-        }
+        return Accepted(new { jobId = jobKey, status = "running", progress = 0, total = 0 });
+    }
+
+    // ── Background job: poll for result ──
+
+    [HttpGet("statistics/authlevel/status")]
+    [Produces("application/json")]
+    public IActionResult GetAuthLevelStatisticsStatus(
+        [FromRoute] string environment,
+        [FromQuery] string kind = "apps")
+    {
+        var jobKey = $"stats-job-{environment}-{kind}";
+
+        if (!memoryCache.TryGetValue(jobKey, out StatsJob? job) || job is null)
+            return NotFound(new { status = "not_started" });
+
+        if (job.Status == "done")
+            return Ok(new { status = "done", result = job.Result });
+
+        if (job.Status == "error")
+            return Ok(new { status = "error", error = job.ErrorMessage });
+
+        return Ok(new { status = "running", progress = job.Progress, total = job.Total });
     }
 
     private async Task<(int? userLevel, int? orgLevel)> ParseSecurityLevel(string baseUrl, string id, CancellationToken ct)
     {
+        var cacheKey = $"policy-authlevel-{baseUrl}-{id}";
+
+        if (memoryCache.TryGetValue(cacheKey, out (int? userLevel, int? orgLevel) cached))
+            return cached;
+
         await using var stream = await client.GetResourcePolicyAsync(baseUrl, id, ct);
         using var reader = XmlReader.Create(stream, new XmlReaderSettings { Async = true });
         var policy = XacmlParser.ParseXacmlPolicy(reader);
@@ -457,7 +520,9 @@ public class ResourceRegistryController(
             }
         }
 
-        return (userLevel, orgLevel);
+        var result = (userLevel, orgLevel);
+        memoryCache.Set(cacheKey, result, PolicyCacheDuration);
+        return result;
     }
 
     private bool TryResolveBaseUrl(string environment, out string baseUrl)
@@ -484,4 +549,13 @@ public class AuthLevelStatistics
     public List<AppAuthLevelEntry> Level2Apps { get; set; } = [];
     public List<AppAuthLevelEntry> OtherApps { get; set; } = [];
     public int ErrorCount { get; set; }
+}
+
+public class StatsJob
+{
+    public string Status { get; set; } = "running";
+    public int Progress;
+    public int Total;
+    public AuthLevelStatistics? Result { get; set; }
+    public string? ErrorMessage { get; set; }
 }

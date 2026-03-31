@@ -284,6 +284,7 @@ const translations: Record<string, Record<Lang, string>> = {
   'stats.description': { nb: 'Henter sikkerhetsnivå fra XACML-policy for alle Altinn Studio-apper (ekskluderer migrerte Altinn 2-apper).', en: 'Fetches security level from XACML policy for all Altinn Studio apps (excludes migrated Altinn 2 apps).' },
   'stats.calculate': { nb: 'Beregn statistikk', en: 'Calculate statistics' },
   'stats.calculating': { nb: 'Henter policyer og beregner...', en: 'Fetching policies and calculating...' },
+  'stats.progress': { nb: 'Behandlet {progress} av {total}...', en: 'Processed {progress} of {total}...' },
   'stats.totalApps': { nb: 'Totalt Altinn Studio-apper', en: 'Total Altinn Studio apps' },
   'stats.level4': { nb: 'Sikkerhetsnivå 4', en: 'Security level 4' },
   'stats.level3': { nb: 'Sikkerhetsnivå 3', en: 'Security level 3' },
@@ -293,6 +294,15 @@ const translations: Record<string, Record<Lang, string>> = {
   'stats.apps': { nb: 'apper', en: 'apps' },
   'stats.showList': { nb: 'Vis liste', en: 'Show list' },
   'stats.hideList': { nb: 'Skjul liste', en: 'Hide list' },
+
+  // Resource statistics (non-app)
+  'stats.res.title': { nb: 'Sikkerhetsnivå for andre ressurser', en: 'Security level for other resources' },
+  'stats.res.description': { nb: 'Henter sikkerhetsnivå fra XACML-policy for alle ressurser som ikke er Altinn-apper.', en: 'Fetches security level from XACML policy for all resources that are not Altinn apps.' },
+  'stats.res.calculate': { nb: 'Beregn statistikk for ressurser', en: 'Calculate statistics for resources' },
+  'stats.res.calculating': { nb: 'Henter policyer for ressurser og beregner...', en: 'Fetching policies for resources and calculating...' },
+  'stats.res.total': { nb: 'Totalt ressurser', en: 'Total resources' },
+  'stats.res.errors': { nb: 'Feil ved henting', en: 'Errors fetching' },
+  'stats.res.resources': { nb: 'ressurser', en: 'resources' },
 };
 
 const LangContext = createContext<LangContextValue | null>(null);

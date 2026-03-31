@@ -30,7 +30,7 @@ const SEARCH_DISPLAY_LIMIT = 100;
 function toggleArrayItem(arr: string[], item: string): string[] {
   return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item];
 }
-import type { Org, OrgList, ServiceResource, AreaGroupDto, RoleDto, PackageDto, AuthLevelStatistics } from '../types';
+import type { Org, OrgList, ServiceResource, AreaGroupDto, RoleDto, PackageDto, AuthLevelStatistics, StatsJobStatus } from '../types';
 import { getText, OrgLogo } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
@@ -94,14 +94,25 @@ export default function HomePage() {
   const [errorKeywords, setErrorKeywords] = useState<string | null>(null);
   const [keywordSearch, setKeywordSearch] = useState('');
 
-  // Statistics tab state
+  // Statistics tab state (apps)
   const [statsData, setStatsData] = useState<AuthLevelStatistics | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [errorStats, setErrorStats] = useState<string | null>(null);
+  const [statsProgress, setStatsProgress] = useState<{ progress: number; total: number } | null>(null);
   const [showLevel4List, setShowLevel4List] = useState(false);
   const [showLevel3List, setShowLevel3List] = useState(false);
   const [showLevel2List, setShowLevel2List] = useState(false);
   const [showOtherList, setShowOtherList] = useState(false);
+
+  // Resource statistics state (non-app)
+  const [resStatsData, setResStatsData] = useState<AuthLevelStatistics | null>(null);
+  const [loadingResStats, setLoadingResStats] = useState(false);
+  const [errorResStats, setErrorResStats] = useState<string | null>(null);
+  const [resStatsProgress, setResStatsProgress] = useState<{ progress: number; total: number } | null>(null);
+  const [showResLevel4List, setShowResLevel4List] = useState(false);
+  const [showResLevel3List, setShowResLevel3List] = useState(false);
+  const [showResLevel2List, setShowResLevel2List] = useState(false);
+  const [showResOtherList, setShowResOtherList] = useState(false);
 
   // Quick search state (hero)
   const [quickSearch, setQuickSearch] = useState('');
@@ -381,18 +392,85 @@ export default function HomePage() {
     setSearchAltinnStudioApps(false);
   }
 
+  function pollStatsJob(
+    kind: 'apps' | 'resources',
+    setData: (d: AuthLevelStatistics) => void,
+    setLoading: (b: boolean) => void,
+    setError: (e: string | null) => void,
+    setProgress: (p: { progress: number; total: number } | null) => void,
+  ) {
+    const poll = () => {
+      fetch(`/api/v1/${env}/resource/statistics/authlevel/status?kind=${kind}`)
+        .then((res) => res.json() as Promise<StatsJobStatus>)
+        .then((job) => {
+          if (job.status === 'done' && job.result) {
+            setData(job.result);
+            setLoading(false);
+            setProgress(null);
+          } else if (job.status === 'error') {
+            setError(job.error ?? 'Unknown error');
+            setLoading(false);
+            setProgress(null);
+          } else {
+            setProgress({ progress: job.progress ?? 0, total: job.total ?? 0 });
+            setTimeout(poll, 2000);
+          }
+        })
+        .catch((err) => {
+          setError(err.message);
+          setLoading(false);
+          setProgress(null);
+        });
+    };
+    return poll;
+  }
+
   function fetchAuthLevelStats() {
     setLoadingStats(true);
     setErrorStats(null);
     setStatsData(null);
-    fetch(`/api/v1/${env}/resource/statistics/authlevel`)
+    setStatsProgress(null);
+    fetch(`/api/v1/${env}/resource/statistics/authlevel/start?kind=apps`, { method: 'POST' })
       .then((res) => {
         if (!res.ok) throw new Error(`Failed: ${res.status}`);
-        return res.json() as Promise<AuthLevelStatistics>;
+        return res.json() as Promise<StatsJobStatus>;
       })
-      .then(setStatsData)
-      .catch((err) => setErrorStats(err.message))
-      .finally(() => setLoadingStats(false));
+      .then((job) => {
+        if (job.status === 'done' && job.result) {
+          setStatsData(job.result);
+          setLoadingStats(false);
+        } else {
+          pollStatsJob('apps', setStatsData, setLoadingStats, setErrorStats, setStatsProgress)();
+        }
+      })
+      .catch((err) => {
+        setErrorStats(err.message);
+        setLoadingStats(false);
+      });
+  }
+
+  function fetchResourceAuthLevelStats() {
+    setLoadingResStats(true);
+    setErrorResStats(null);
+    setResStatsData(null);
+    setResStatsProgress(null);
+    fetch(`/api/v1/${env}/resource/statistics/authlevel/start?kind=resources`, { method: 'POST' })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed: ${res.status}`);
+        return res.json() as Promise<StatsJobStatus>;
+      })
+      .then((job) => {
+        if (job.status === 'done' && job.result) {
+          setResStatsData(job.result);
+          setLoadingResStats(false);
+        } else {
+          pollStatsJob('resources', setResStatsData, setLoadingResStats, setErrorResStats, setResStatsProgress)();
+        }
+      })
+      .catch((err) => {
+        setErrorResStats(err.message);
+        setLoadingResStats(false);
+      });
   }
 
   return (
@@ -1073,6 +1151,9 @@ export default function HomePage() {
               <div className="flex flex-col items-center gap-4 py-20">
                 <Spinner aria-label={t('stats.calculating')} data-size="lg" />
                 <Paragraph>{t('stats.calculating')}</Paragraph>
+                {statsProgress && statsProgress.total > 0 && (
+                  <Paragraph data-size="sm">{t('stats.progress').replace('{progress}', String(statsProgress.progress)).replace('{total}', String(statsProgress.total))}</Paragraph>
+                )}
               </div>
             )}
 
@@ -1252,6 +1333,207 @@ export default function HomePage() {
                 </Button>
               </div>
             )}
+
+            {/* Resource statistics (non-app) */}
+            <div className="mt-12 pt-8 border-t border-neutral-300">
+              <Heading level={2} data-size="md" className="mb-2">{t('stats.res.title')}</Heading>
+              <Paragraph className="mb-6" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                {t('stats.res.description')}
+              </Paragraph>
+
+              {!resStatsData && !loadingResStats && (
+                <Button data-size="md" onClick={fetchResourceAuthLevelStats}>
+                  {t('stats.res.calculate')}
+                </Button>
+              )}
+
+              {loadingResStats && (
+                <div className="flex flex-col items-center gap-4 py-20">
+                  <Spinner aria-label={t('stats.res.calculating')} data-size="lg" />
+                  <Paragraph>{t('stats.res.calculating')}</Paragraph>
+                  {resStatsProgress && resStatsProgress.total > 0 && (
+                    <Paragraph data-size="sm">{t('stats.progress').replace('{progress}', String(resStatsProgress.progress)).replace('{total}', String(resStatsProgress.total))}</Paragraph>
+                  )}
+                </div>
+              )}
+
+              {errorResStats && (
+                <Alert data-color="danger" className="mb-6">
+                  {t('error.loadData')}: {errorResStats}
+                </Alert>
+              )}
+
+              {resStatsData && !loadingResStats && (
+                <div className="space-y-6">
+                  {/* Summary cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <Card data-color="neutral">
+                      <CardBlock>
+                        <Heading level={3} data-size="2xl" className="text-center">{resStatsData.totalApps}</Heading>
+                        <Paragraph data-size="sm" className="text-center">{t('stats.res.total')}</Paragraph>
+                      </CardBlock>
+                    </Card>
+                    <Card data-color="danger">
+                      <CardBlock>
+                        <Heading level={3} data-size="2xl" className="text-center">{resStatsData.level4Apps.length}</Heading>
+                        <Paragraph data-size="sm" className="text-center">{t('stats.level4')}</Paragraph>
+                      </CardBlock>
+                    </Card>
+                    <Card data-color="warning">
+                      <CardBlock>
+                        <Heading level={3} data-size="2xl" className="text-center">{resStatsData.level3Apps.length}</Heading>
+                        <Paragraph data-size="sm" className="text-center">{t('stats.level3')}</Paragraph>
+                      </CardBlock>
+                    </Card>
+                    <Card data-color="info">
+                      <CardBlock>
+                        <Heading level={3} data-size="2xl" className="text-center">{resStatsData.level2Apps.length}</Heading>
+                        <Paragraph data-size="sm" className="text-center">{t('stats.level2')}</Paragraph>
+                      </CardBlock>
+                    </Card>
+                    <Card data-color="neutral">
+                      <CardBlock>
+                        <Heading level={3} data-size="2xl" className="text-center">{resStatsData.otherApps.length}</Heading>
+                        <Paragraph data-size="sm" className="text-center">{t('stats.other')}</Paragraph>
+                      </CardBlock>
+                    </Card>
+                  </div>
+
+                  {resStatsData.errorCount > 0 && (
+                    <Alert data-color="warning">
+                      {t('stats.res.errors')}: {resStatsData.errorCount} {t('stats.res.resources')}
+                    </Alert>
+                  )}
+
+                  {/* Level 4 list */}
+                  {resStatsData.level4Apps.length > 0 && (
+                    <div>
+                      <Button variant="secondary" data-size="sm" onClick={() => setShowResLevel4List(!showResLevel4List)} className="mb-3">
+                        {showResLevel4List ? t('stats.hideList') : t('stats.showList')}: {t('stats.level4')} ({resStatsData.level4Apps.length})
+                      </Button>
+                      {showResLevel4List && (
+                        <div className="grid gap-2">
+                          {resStatsData.level4Apps.map((r) => (
+                            <Card key={r.identifier} data-color="danger" className="p-0">
+                              <CardBlock>
+                                <div className="flex items-center justify-between gap-4">
+                                  <div>
+                                    <Link to={`/resource/${r.identifier}`} className="font-semibold">
+                                      {getText(r.title, lang) || r.identifier}
+                                    </Link>
+                                    <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                                      {r.identifier} — {r.hasCompetentAuthority?.orgcode}
+                                    </Paragraph>
+                                  </div>
+                                  <Tag data-size="sm" data-color="danger">Nivå 4</Tag>
+                                </div>
+                              </CardBlock>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Level 3 list */}
+                  {resStatsData.level3Apps.length > 0 && (
+                    <div>
+                      <Button variant="secondary" data-size="sm" onClick={() => setShowResLevel3List(!showResLevel3List)} className="mb-3">
+                        {showResLevel3List ? t('stats.hideList') : t('stats.showList')}: {t('stats.level3')} ({resStatsData.level3Apps.length})
+                      </Button>
+                      {showResLevel3List && (
+                        <div className="grid gap-2">
+                          {resStatsData.level3Apps.map((r) => (
+                            <Card key={r.identifier} data-color="warning" className="p-0">
+                              <CardBlock>
+                                <div className="flex items-center justify-between gap-4">
+                                  <div>
+                                    <Link to={`/resource/${r.identifier}`} className="font-semibold">
+                                      {getText(r.title, lang) || r.identifier}
+                                    </Link>
+                                    <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                                      {r.identifier} — {r.hasCompetentAuthority?.orgcode}
+                                    </Paragraph>
+                                  </div>
+                                  <Tag data-size="sm" data-color="warning">Nivå 3</Tag>
+                                </div>
+                              </CardBlock>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Level 2 list */}
+                  {resStatsData.level2Apps.length > 0 && (
+                    <div>
+                      <Button variant="secondary" data-size="sm" onClick={() => setShowResLevel2List(!showResLevel2List)} className="mb-3">
+                        {showResLevel2List ? t('stats.hideList') : t('stats.showList')}: {t('stats.level2')} ({resStatsData.level2Apps.length})
+                      </Button>
+                      {showResLevel2List && (
+                        <div className="grid gap-2">
+                          {resStatsData.level2Apps.map((r) => (
+                            <Card key={r.identifier} data-color="info" className="p-0">
+                              <CardBlock>
+                                <div className="flex items-center justify-between gap-4">
+                                  <div>
+                                    <Link to={`/resource/${r.identifier}`} className="font-semibold">
+                                      {getText(r.title, lang) || r.identifier}
+                                    </Link>
+                                    <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                                      {r.identifier} — {r.hasCompetentAuthority?.orgcode}
+                                    </Paragraph>
+                                  </div>
+                                  <Tag data-size="sm" data-color="info">Nivå 2</Tag>
+                                </div>
+                              </CardBlock>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Other / not set list */}
+                  {resStatsData.otherApps.length > 0 && (
+                    <div>
+                      <Button variant="secondary" data-size="sm" onClick={() => setShowResOtherList(!showResOtherList)} className="mb-3">
+                        {showResOtherList ? t('stats.hideList') : t('stats.showList')}: {t('stats.other')} ({resStatsData.otherApps.length})
+                      </Button>
+                      {showResOtherList && (
+                        <div className="grid gap-2">
+                          {resStatsData.otherApps.map((r) => (
+                            <Card key={r.identifier} data-color="neutral" className="p-0">
+                              <CardBlock>
+                                <div className="flex items-center justify-between gap-4">
+                                  <div>
+                                    <Link to={`/resource/${r.identifier}`} className="font-semibold">
+                                      {getText(r.title, lang) || r.identifier}
+                                    </Link>
+                                    <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                                      {r.identifier} — {r.hasCompetentAuthority?.orgcode}
+                                    </Paragraph>
+                                  </div>
+                                  <Tag data-size="sm" data-color="neutral">
+                                    {r.userLevel !== null ? `Nivå ${r.userLevel}` : '—'}
+                                  </Tag>
+                                </div>
+                              </CardBlock>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Recalculate button */}
+                  <Button variant="secondary" data-size="sm" onClick={fetchResourceAuthLevelStats}>
+                    {t('stats.res.calculate')}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </Tabs.Panel>
       </Tabs>

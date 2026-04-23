@@ -565,6 +565,46 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Delegation wizard CTA */}
+      <section className="mb-10">
+        <Link to="/wizard" className="no-underline block">
+          <Card
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            style={{ overflow: 'hidden' }}
+          >
+            <div className="flex">
+              <div
+                data-color="info"
+                style={{ width: '6px', flexShrink: 0, background: 'var(--ds-color-base-default)' }}
+              />
+              <CardBlock className="p-5 flex items-center gap-5 flex-1 flex-wrap">
+                <div
+                  data-color="info"
+                  className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'var(--ds-color-surface-default)', color: 'var(--ds-color-base-default)' }}
+                  aria-hidden="true"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9.663 17h4.673M12 3v1M6.343 6.343l.707.707M3 12h1M20 12h1M17.657 6.343l-.707.707M12 18a5 5 0 1 0-5-5c0 1.933 1.5 3.5 2.5 4.5V19a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1.5c1-1 2.5-2.567 2.5-4.5z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-[16rem]">
+                  <Heading level={3} data-size="xs" className="mb-1">
+                    {t('wizard.cta.title')}
+                  </Heading>
+                  <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                    {t('wizard.cta.description')}
+                  </Paragraph>
+                </div>
+                <Button variant="primary" data-size="sm" asChild>
+                  <span>{t('wizard.cta.button')} &rarr;</span>
+                </Button>
+              </CardBlock>
+            </div>
+          </Card>
+        </Link>
+      </section>
+
       {/* Tabs */}
       <Tabs value={activeTab} onChange={(val) => navigate(PATH_FOR_TAB[val] ?? '/')}>
         <Tabs.List>

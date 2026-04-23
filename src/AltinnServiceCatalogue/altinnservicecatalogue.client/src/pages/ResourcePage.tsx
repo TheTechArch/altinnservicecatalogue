@@ -172,33 +172,49 @@ export default function ResourcePage() {
       });
   }, [id, env]);
 
-  // Fetch policy rules for this resource
+  // Fetch policy rules for this resource.
+  // Altinn 2 migrated apps (_a1-/_a2-) make upstream /policy/rules error out, so we fall back
+  // to /policy/subjects — that returns the role/package list without per-rule actions.
   useEffect(() => {
     if (!id) return;
     setLoadingRules(true);
 
-    fetch(`/api/v1/${env}/resource/${encodeURIComponent(id)}/policy/rules`)
-      .then((res) => {
-        if (!res.ok) return [];
-        return res.json() as Promise<PolicyRule[]>;
-      })
-      .then((rules) => {
-        const subjects = groupRulesBySubject(rules);
+    const rulesUrl = `/api/v1/${env}/resource/${encodeURIComponent(id)}/policy/rules`;
+    const subjectsUrl = `/api/v1/${env}/resource/${encodeURIComponent(id)}/policy/subjects`;
 
-        const packages = subjects
-          .filter((s) => s.type === 'urn:altinn:accesspackage')
-          .sort((a, b) => a.value.localeCompare(b.value));
-        setPackageSubjects(packages);
+    (async () => {
+      let subjects: SubjectActions[] = [];
 
-        const roles = subjects
-          .filter((s) =>
-            s.type === 'urn:altinn:rolecode' ||
-            s.type === 'urn:altinn:external-role' ||
-            s.type === 'urn:altinn:role',
-          )
-          .sort((a, b) => a.value.localeCompare(b.value));
-        setRoleSubjects(roles);
-      })
+      const rulesRes = await fetch(rulesUrl);
+      if (rulesRes.ok) {
+        const rules = (await rulesRes.json()) as PolicyRule[];
+        subjects = groupRulesBySubject(rules);
+      }
+
+      if (subjects.length === 0) {
+        const subjectsRes = await fetch(subjectsUrl);
+        if (subjectsRes.ok) {
+          const body = (await subjectsRes.json()) as { data?: { type: string; value: string }[] };
+          subjects = (body.data ?? [])
+            .filter((s) => s.value)
+            .map((s) => ({ type: s.type, value: s.value, actions: [] }));
+        }
+      }
+
+      const packages = subjects
+        .filter((s) => s.type === 'urn:altinn:accesspackage')
+        .sort((a, b) => a.value.localeCompare(b.value));
+      setPackageSubjects(packages);
+
+      const roles = subjects
+        .filter((s) =>
+          s.type === 'urn:altinn:rolecode' ||
+          s.type === 'urn:altinn:external-role' ||
+          s.type === 'urn:altinn:role',
+        )
+        .sort((a, b) => a.value.localeCompare(b.value));
+      setRoleSubjects(roles);
+    })()
       .catch(() => {
         setPackageSubjects([]);
         setRoleSubjects([]);

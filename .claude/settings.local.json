@@ -93,7 +93,10 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://platform.altinn.no/accessmanagement/api/v1/meta/info/accesspackages/urn/urn%3Aaltinn%3Aaccesspackage%3Astarte-drive-endre-avikle-virksomhet\")",
       "Bash(curl -s https://platform.altinn.no/accessmanagement/api/v1/meta/info/accesspackages/search?term=starte)",
       "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(f''''{r[object][id]} | {r[object][urn]} | {r[object][name]}''''\\) for r in data[:5]]\")",
-      "Bash(curl -s -w n%{http_code} https://platform.altinn.no/accessmanagement/api/v1/meta/info/roles/48f9e5ec-efd5-4863-baba-9697b8971666)"
+      "Bash(curl -s -w n%{http_code} https://platform.altinn.no/accessmanagement/api/v1/meta/info/roles/48f9e5ec-efd5-4863-baba-9697b8971666)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)"
     ],
     "additionalDirectories": [
       "\\tmp"

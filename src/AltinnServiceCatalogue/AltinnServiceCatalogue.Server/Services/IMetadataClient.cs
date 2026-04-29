@@ -27,6 +27,12 @@ public interface IMetadataClient
     Task<List<PackageDto>> GetRolePackagesByIdAsync(string baseUrl, Guid id, string variant, bool? includeResources, CancellationToken ct = default);
     Task<List<ResourceDto>> GetRoleResourcesByIdAsync(string baseUrl, Guid id, string variant, bool? includePackageResources, CancellationToken ct = default);
 
+    /// <summary>
+    /// Returns roles that grant the specified access package. Built by inverting the role->packages
+    /// mapping across all roles, with the inverted map cached in memory.
+    /// </summary>
+    Task<List<RoleDto>> GetPackageRolesAsync(string baseUrl, Guid packageId, CancellationToken ct = default);
+
     // Types
     Task<List<SubTypeDto>> GetOrganizationSubTypesAsync(string baseUrl, CancellationToken ct = default);
 }

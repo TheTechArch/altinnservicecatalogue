@@ -2,12 +2,21 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Altinn.Authorization.Api.Contracts.AccessManagement;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace AltinnServiceCatalogue.Server.Services;
 
-public class MetadataClient(IHttpClientFactory httpClientFactory, ILogger<MetadataClient> logger) : IMetadataClient
+public class MetadataClient(
+    IHttpClientFactory httpClientFactory,
+    IMemoryCache cache,
+    ILogger<MetadataClient> logger) : IMetadataClient
 {
     private const string BasePath = "/accessmanagement/api/v1/meta";
+
+    /// <summary>Variant used when inverting role->packages to a package->roles map.</summary>
+    private const string DefaultRoleVariant = "person";
+
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(30);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -169,11 +178,15 @@ public class MetadataClient(IHttpClientFactory httpClientFactory, ILogger<Metada
     public async Task<List<PackageDto>> GetRolePackagesAsync(string baseUrl, string role, string variant, bool? includeResources, CancellationToken ct)
     {
         var client = CreateClient();
-        var query = new QueryBuilder();
+        var query = new QueryBuilder
+        {
+            { "role", role },
+            { "variant", variant },
+        };
         if (includeResources.HasValue)
             query.Add("includeResources", includeResources.Value.ToString().ToLowerInvariant());
 
-        var url = $"{baseUrl}{BasePath}/info/roles/{Uri.EscapeDataString(role)}/{Uri.EscapeDataString(variant)}/package{query}";
+        var url = $"{baseUrl}{BasePath}/info/roles/packages{query}";
 
         var response = await client.GetAsync(url, ct);
         response.EnsureSuccessStatusCode();
@@ -183,11 +196,15 @@ public class MetadataClient(IHttpClientFactory httpClientFactory, ILogger<Metada
     public async Task<List<ResourceDto>> GetRoleResourcesAsync(string baseUrl, string role, string variant, bool? includePackageResources, CancellationToken ct)
     {
         var client = CreateClient();
-        var query = new QueryBuilder();
+        var query = new QueryBuilder
+        {
+            { "role", role },
+            { "variant", variant },
+        };
         if (includePackageResources.HasValue)
             query.Add("includePackageResources", includePackageResources.Value.ToString().ToLowerInvariant());
 
-        var url = $"{baseUrl}{BasePath}/info/roles/{Uri.EscapeDataString(role)}/{Uri.EscapeDataString(variant)}/resource{query}";
+        var url = $"{baseUrl}{BasePath}/info/roles/resources{query}";
 
         var response = await client.GetAsync(url, ct);
         response.EnsureSuccessStatusCode();
@@ -197,11 +214,14 @@ public class MetadataClient(IHttpClientFactory httpClientFactory, ILogger<Metada
     public async Task<List<PackageDto>> GetRolePackagesByIdAsync(string baseUrl, Guid id, string variant, bool? includeResources, CancellationToken ct)
     {
         var client = CreateClient();
-        var query = new QueryBuilder();
+        var query = new QueryBuilder
+        {
+            { "variant", variant },
+        };
         if (includeResources.HasValue)
             query.Add("includeResources", includeResources.Value.ToString().ToLowerInvariant());
 
-        var url = $"{baseUrl}{BasePath}/info/roles/id/{id}/{Uri.EscapeDataString(variant)}/package{query}";
+        var url = $"{baseUrl}{BasePath}/info/roles/{id}/packages{query}";
 
         var response = await client.GetAsync(url, ct);
         response.EnsureSuccessStatusCode();
@@ -211,15 +231,83 @@ public class MetadataClient(IHttpClientFactory httpClientFactory, ILogger<Metada
     public async Task<List<ResourceDto>> GetRoleResourcesByIdAsync(string baseUrl, Guid id, string variant, bool? includePackageResources, CancellationToken ct)
     {
         var client = CreateClient();
-        var query = new QueryBuilder();
+        var query = new QueryBuilder
+        {
+            { "variant", variant },
+        };
         if (includePackageResources.HasValue)
             query.Add("includePackageResources", includePackageResources.Value.ToString().ToLowerInvariant());
 
-        var url = $"{baseUrl}{BasePath}/info/roles/id/{id}/{Uri.EscapeDataString(variant)}/resource{query}";
+        var url = $"{baseUrl}{BasePath}/info/roles/{id}/resources{query}";
 
         var response = await client.GetAsync(url, ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<List<ResourceDto>>(JsonOptions, ct) ?? [];
+    }
+
+    public async Task<List<RoleDto>> GetPackageRolesAsync(string baseUrl, Guid packageId, CancellationToken ct)
+    {
+        var map = await GetPackageRolesMapAsync(baseUrl, ct);
+        return map.TryGetValue(packageId, out var roles) ? roles : [];
+    }
+
+    /// <summary>
+    /// Builds (and caches) a map of access-package-id -> roles that grant the package.
+    /// Upstream has no direct package->roles endpoint, so we invert role->packages across all roles.
+    /// </summary>
+    private async Task<Dictionary<Guid, List<RoleDto>>> GetPackageRolesMapAsync(string baseUrl, CancellationToken ct)
+    {
+        var cacheKey = $"package-roles-map-{baseUrl}";
+        if (cache.TryGetValue(cacheKey, out Dictionary<Guid, List<RoleDto>>? cached) && cached is not null)
+            return cached;
+
+        logger.LogInformation("Building package->roles inverted map for {BaseUrl}", baseUrl);
+
+        var roles = await GetRolesAsync(baseUrl, ct);
+        var map = new Dictionary<Guid, List<RoleDto>>();
+
+        // Limit upstream concurrency so we don't hammer the metadata service.
+        using var gate = new SemaphoreSlim(10);
+        var tasks = roles.Select(async role =>
+        {
+            await gate.WaitAsync(ct);
+            try
+            {
+                var pkgs = await GetRolePackagesByIdAsync(baseUrl, role.Id, DefaultRoleVariant, includeResources: false, ct);
+                return (role, pkgs);
+            }
+            catch (HttpRequestException ex)
+            {
+                logger.LogWarning(ex, "Failed to fetch packages for role {RoleId} ({RoleCode}); skipping", role.Id, role.Code);
+                return (role, new List<PackageDto>());
+            }
+            finally
+            {
+                gate.Release();
+            }
+        });
+
+        var results = await Task.WhenAll(tasks);
+        foreach (var (role, pkgs) in results)
+        {
+            foreach (var pkg in pkgs)
+            {
+                if (!map.TryGetValue(pkg.Id, out var list))
+                {
+                    list = [];
+                    map[pkg.Id] = list;
+                }
+                list.Add(role);
+            }
+        }
+
+        // Sort each role list by name for stable output.
+        foreach (var key in map.Keys.ToList())
+            map[key] = [.. map[key].OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase)];
+
+        cache.Set(cacheKey, map, CacheDuration);
+        logger.LogInformation("Built package->roles map with {Packages} packages from {Roles} roles", map.Count, roles.Count);
+        return map;
     }
 
     // Types

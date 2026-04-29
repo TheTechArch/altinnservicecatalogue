@@ -9,7 +9,7 @@ import {
   Card,
   CardBlock,
 } from '@digdir/designsystemet-react';
-import type { PackageDto, MetaResource, AreaGroupDto, PolicyRule } from '../types';
+import type { PackageDto, MetaResource, AreaGroupDto, PolicyRule, RoleDto } from '../types';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
 
@@ -72,6 +72,9 @@ export default function PackagePage() {
   // Map of resourceRefId -> actions granted by this package
   const [actionMap, setActionMap] = useState<Record<string, string[]>>({});
 
+  const [roles, setRoles] = useState<RoleDto[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
+
   // Fetch package data
   useEffect(() => {
     if (!packageId) return;
@@ -95,6 +98,21 @@ export default function PackagePage() {
         setLoading(false);
       });
   }, [packageId, env]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch roles that grant this access package. Inverted server-side and cached for 30 min.
+  useEffect(() => {
+    if (!pkg) return;
+    setLoadingRoles(true);
+
+    fetch(`/api/v1/${env}/meta/info/accesspackages/${pkg.id}/roles`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to fetch package roles: ${res.status}`);
+        return res.json() as Promise<RoleDto[]>;
+      })
+      .then(setRoles)
+      .catch(() => setRoles([]))
+      .finally(() => setLoadingRoles(false));
+  }, [pkg, env]);
 
   // Fetch policy rules for each resource once we have them
   useEffect(() => {
@@ -225,6 +243,66 @@ export default function PackagePage() {
           </dl>
         </CardBlock>
       </Card>
+
+      {/* Roles that grant this package */}
+      <section className="mb-10">
+        <Heading level={3} data-size="sm" className="mb-4">
+          {t('packages.roles')} ({roles.length})
+        </Heading>
+
+        {loadingRoles && (
+          <div className="flex justify-center py-10">
+            <Spinner aria-label={t('loading')} data-size="md" />
+          </div>
+        )}
+
+        {!loadingRoles && roles.length === 0 && (
+          <Paragraph className="text-center py-10 text-gray-500">
+            {t('packages.noRoles')}
+          </Paragraph>
+        )}
+
+        {!loadingRoles && roles.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {roles.map((role) => (
+              <Link
+                key={role.id}
+                to={`/role/${encodeURIComponent(role.id)}`}
+                state={{ role }}
+                className="no-underline"
+              >
+                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                  <CardBlock className="p-5 flex flex-col gap-2">
+                    <Heading level={4} data-size="2xs">
+                      {role.name}
+                    </Heading>
+                    {role.description && (
+                      <Paragraph data-size="sm" className="text-gray-600 line-clamp-3">
+                        {role.description}
+                      </Paragraph>
+                    )}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {role.isKeyRole && (
+                        <Tag data-size="sm" data-color="info">
+                          {t('roles.keyRole')}
+                        </Tag>
+                      )}
+                      <Tag data-size="sm" data-color="neutral">
+                        {role.code}
+                      </Tag>
+                      {role.provider && (
+                        <Tag data-size="sm" data-color="neutral">
+                          {role.provider.name}
+                        </Tag>
+                      )}
+                    </div>
+                  </CardBlock>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Services in this package */}
       <section>

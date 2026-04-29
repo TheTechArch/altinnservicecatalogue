@@ -9,7 +9,7 @@ import {
   Card,
   CardBlock,
 } from '@digdir/designsystemet-react';
-import type { RoleDto, SubjectResourcesResponse, PolicyRule } from '../types';
+import type { RoleDto, SubjectResourcesResponse, PolicyRule, PackageDto } from '../types';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
 
@@ -101,6 +101,9 @@ export default function RolePage() {
   // Map of resourceRefId -> actions granted by this role
   const [actionMap, setActionMap] = useState<Record<string, string[]>>({});
 
+  const [packages, setPackages] = useState<PackageDto[]>([]);
+  const [loadingPackages, setLoadingPackages] = useState(false);
+
   // Fetch role data if not passed via router state
   useEffect(() => {
     if (!roleId) return;
@@ -124,6 +127,28 @@ export default function RolePage() {
         setLoading(false);
       });
   }, [roleId, env]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch access packages granted by this role (variant=person covers all current upstream roles)
+  useEffect(() => {
+    if (!role) return;
+    setLoadingPackages(true);
+
+    fetch(`/api/v1/${env}/meta/info/roles/${role.id}/packages?variant=person`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to fetch role packages: ${res.status}`);
+        return res.json() as Promise<PackageDto[]>;
+      })
+      .then((data) => {
+        const sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
+        setPackages(sorted);
+      })
+      .catch(() => {
+        setPackages([]);
+      })
+      .finally(() => {
+        setLoadingPackages(false);
+      });
+  }, [role, env]);
 
   // Fetch resources for this role via bysubjects
   useEffect(() => {
@@ -310,6 +335,69 @@ export default function RolePage() {
           </dl>
         </CardBlock>
       </Card>
+
+      {/* Access packages granted by this role */}
+      <section className="mb-10">
+        <Heading level={3} data-size="sm" className="mb-4">
+          {t('roles.packages')} ({packages.length})
+        </Heading>
+
+        {loadingPackages && (
+          <div className="flex justify-center py-10">
+            <Spinner aria-label={t('loading')} data-size="md" />
+          </div>
+        )}
+
+        {!loadingPackages && packages.length === 0 && (
+          <Paragraph className="text-center py-10 text-gray-500">
+            {t('roles.noPackages')}
+          </Paragraph>
+        )}
+
+        {!loadingPackages && packages.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {packages.map((pkg) => (
+              <Link
+                key={pkg.id}
+                to={`/package/${encodeURIComponent(pkg.id)}`}
+                state={{ pkg }}
+                className="no-underline"
+              >
+                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                  <CardBlock className="p-5 flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      {pkg.area?.iconUrl && (
+                        <img src={pkg.area.iconUrl} alt="" className="w-5 h-5 flex-shrink-0" />
+                      )}
+                      <Heading level={4} data-size="2xs">
+                        {pkg.name}
+                      </Heading>
+                    </div>
+                    {pkg.description && (
+                      <Paragraph data-size="sm" className="text-gray-600 line-clamp-3">
+                        {pkg.description}
+                      </Paragraph>
+                    )}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {pkg.area && (
+                        <Tag data-size="sm" data-color="neutral">
+                          {pkg.area.name}
+                        </Tag>
+                      )}
+                      <Tag
+                        data-size="sm"
+                        data-color={pkg.isDelegable ? 'success' : 'neutral'}
+                      >
+                        {pkg.isDelegable ? t('packages.delegable') : t('packages.notDelegable')}
+                      </Tag>
+                    </div>
+                  </CardBlock>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Services this role has access to */}
       <section>

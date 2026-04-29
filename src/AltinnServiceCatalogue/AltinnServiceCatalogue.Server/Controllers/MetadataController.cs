@@ -298,12 +298,12 @@ public class MetadataController(
         }
     }
 
-    [HttpGet("info/roles/{role}/{variant}/package")]
+    [HttpGet("info/roles/packages")]
     [ProducesResponseType<List<PackageDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRolePackages(
         [FromRoute] string environment,
-        [FromRoute] string role,
-        [FromRoute] string variant,
+        [FromQuery] string role,
+        [FromQuery] string variant,
         [FromQuery] bool? includeResources,
         CancellationToken ct)
     {
@@ -322,12 +322,12 @@ public class MetadataController(
         }
     }
 
-    [HttpGet("info/roles/{role}/{variant}/resource")]
+    [HttpGet("info/roles/resources")]
     [ProducesResponseType<List<ResourceDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRoleResources(
         [FromRoute] string environment,
-        [FromRoute] string role,
-        [FromRoute] string variant,
+        [FromQuery] string role,
+        [FromQuery] string variant,
         [FromQuery] bool? includePackageResources,
         CancellationToken ct)
     {
@@ -346,12 +346,12 @@ public class MetadataController(
         }
     }
 
-    [HttpGet("info/roles/id/{id:guid}/{variant}/package")]
+    [HttpGet("info/roles/{id:guid}/packages")]
     [ProducesResponseType<List<PackageDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRolePackagesById(
         [FromRoute] string environment,
         [FromRoute] Guid id,
-        [FromRoute] string variant,
+        [FromQuery] string variant,
         [FromQuery] bool? includeResources,
         CancellationToken ct)
     {
@@ -370,12 +370,12 @@ public class MetadataController(
         }
     }
 
-    [HttpGet("info/roles/id/{id:guid}/{variant}/resource")]
+    [HttpGet("info/roles/{id:guid}/resources")]
     [ProducesResponseType<List<ResourceDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRoleResourcesById(
         [FromRoute] string environment,
         [FromRoute] Guid id,
-        [FromRoute] string variant,
+        [FromQuery] string variant,
         [FromQuery] bool? includePackageResources,
         CancellationToken ct)
     {
@@ -390,6 +390,28 @@ public class MetadataController(
         catch (HttpRequestException ex)
         {
             logger.LogError(ex, "Upstream request failed for GetRoleResourcesById({Id}/{Variant}) in {Environment}", id, variant, environment);
+            return StatusCode(StatusCodes.Status502BadGateway, "Upstream service unavailable");
+        }
+    }
+
+    [HttpGet("info/accesspackages/{id:guid}/roles")]
+    [ProducesResponseType<List<RoleDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPackageRoles(
+        [FromRoute] string environment,
+        [FromRoute] Guid id,
+        CancellationToken ct)
+    {
+        if (!TryResolveBaseUrl(environment, out var baseUrl))
+            return BadRequest($"Unknown environment: {environment}");
+
+        try
+        {
+            var result = await client.GetPackageRolesAsync(baseUrl, id, ct);
+            return Ok(result);
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Upstream request failed for GetPackageRoles({Id}) in {Environment}", id, environment);
             return StatusCode(StatusCodes.Status502BadGateway, "Upstream service unavailable");
         }
     }

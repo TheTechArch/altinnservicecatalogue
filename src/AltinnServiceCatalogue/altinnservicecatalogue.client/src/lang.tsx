@@ -129,6 +129,8 @@ const translations: Record<string, Record<Lang, string>> = {
   'packages.notDelegable': { nb: 'Ikke delegerbar', en: 'Not delegable' },
   'packages.services': { nb: 'Tjenester i denne pakken', en: 'Services in this package' },
   'packages.noServices': { nb: 'Ingen tjenester i denne pakken.', en: 'No services in this package.' },
+  'packages.roles': { nb: 'Roller som gir denne pakken', en: 'Roles that grant this package' },
+  'packages.noRoles': { nb: 'Ingen roller gir denne pakken.', en: 'No roles grant this package.' },
   'packages.area': { nb: 'Område', en: 'Area' },
   'packages.group': { nb: 'Kategori', en: 'Category' },
   'packages.urn': { nb: 'URN', en: 'URN' },
@@ -151,6 +153,8 @@ const translations: Record<string, Record<Lang, string>> = {
   'roles.keyRoles': { nb: 'Nøkkelroller', en: 'Key roles' },
   'roles.services': { nb: 'Tjenester med denne rollen', en: 'Services with this role' },
   'roles.noServices': { nb: 'Ingen tjenester knyttet til denne rollen.', en: 'No services associated with this role.' },
+  'roles.packages': { nb: 'Tilgangspakker rollen gir', en: 'Access packages granted by this role' },
+  'roles.noPackages': { nb: 'Denne rollen gir ingen tilgangspakker.', en: 'This role does not grant any access packages.' },
 
   // Keywords
   'home.tabs.keywords': { nb: 'Nøkkelord', en: 'Keywords' },

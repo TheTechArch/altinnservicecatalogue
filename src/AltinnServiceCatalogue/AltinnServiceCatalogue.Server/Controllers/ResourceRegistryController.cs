@@ -386,6 +386,7 @@ public class ResourceRegistryController(
                 {
                     filtered = allResources
                         .Where(r => r.ResourceType != Altinn.Authorization.Api.Contracts.ResourceType.AltinnApp
+                            && r.ResourceType != Altinn.Authorization.Api.Contracts.ResourceType.MigratedApp
                             && r.Identifier is not null)
                         .ToList();
                 }

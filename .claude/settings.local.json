@@ -127,7 +127,9 @@
       "Bash(node -e \"const r=require\\('C:/Users/RUNLAR/AppData/Local/Temp/roles.json'\\); const groups={}; r.forEach\\(x=>{const c=x.provider?.code||'none'; \\(groups[c]??=[]\\).push\\(x\\);}\\); for\\(const c in groups\\){console.log\\(c,':',groups[c].slice\\(0,2\\).map\\(x=>x.id+'|'+x.code\\).join\\('  '\\)\\);}\")",
       "Bash(curl -s -w ' HTTP %{http_code}\\\\n' 'https://platform.tt02.altinn.no/accessmanagement/api/v1/meta/info/roles/__TRACKED_VAR__/packages?variant=person')",
       "Bash(curl -s -w '\\\\n HTTP %{http_code}\\\\n' 'https://platform.tt02.altinn.no/accessmanagement/api/v1/meta/info/roles/__TRACKED_VAR__/packages?variant=person')",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(curl -s -o /tmp/altinn-am-enduser.json \"https://raw.githubusercontent.com/Altinn/altinn-studio-docs/refs/heads/master/static/swagger/altinn-platform-accessmanagement-v1-enduser.json\")",
+      "Bash(curl -s -o c:/repos/altinnservicecatalogue/.tmp-spec.json \"https://raw.githubusercontent.com/Altinn/altinn-studio-docs/refs/heads/master/static/swagger/altinn-platform-accessmanagement-v1-enduser.json\")"
     ],
     "additionalDirectories": [
       "\\tmp"

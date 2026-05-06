@@ -20,7 +20,7 @@ import {
 
 const RESOURCE_TYPES = [
   'Default', 'Systemresource', 'MaskinportenSchema', 'Altinn2Service',
-  'AltinnApp', 'GenericAccessResource', 'BrokerService', 'CorrespondenceService', 'Consent',
+  'AltinnApp', 'MigratedApp', 'GenericAccessResource', 'BrokerService', 'CorrespondenceService', 'Consent',
 ];
 const AVAILABLE_FOR_TYPES = [
   'PrivatePerson', 'LegalEntityEnterprise', 'Company', 'BankruptcyEstate', 'SelfRegisteredUser',
@@ -130,6 +130,8 @@ export default function HomePage() {
   const [searchAccessList, setSearchAccessList] = useState(false);
   const [searchMigratedAltinn2, setSearchMigratedAltinn2] = useState(false);
   const [searchAltinnStudioApps, setSearchAltinnStudioApps] = useState(false);
+  const [searchMigratedApps, setSearchMigratedApps] = useState(false);
+  const [searchOwner, setSearchOwner] = useState('');
 
   // Fetch orgs
   useEffect(() => {
@@ -326,6 +328,20 @@ export default function HomePage() {
     [resources],
   );
 
+  const distinctOwners = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const r of resources) {
+      const code = r.hasCompetentAuthority?.orgcode?.toLowerCase();
+      if (!code) continue;
+      if (!seen.has(code)) {
+        seen.set(code, getText(r.hasCompetentAuthority?.name, lang) || code);
+      }
+    }
+    return [...seen.entries()]
+      .map(([code, name]) => ({ code, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [resources, lang]);
+
   const filteredSearchResults = useMemo(() => {
     return resources.filter((r) => {
       if (searchQuery) {
@@ -346,14 +362,18 @@ export default function HomePage() {
       if (searchAccessList && r.accessListMode !== 'Enabled') return false;
       if (searchMigratedAltinn2 && !r.resourceReferences?.some((ref) => ref.referenceType === 'ServiceCode')) return false;
       if (searchAltinnStudioApps && !(r.resourceType === 'AltinnApp' && !r.identifier.includes('_a2-'))) return false;
+      if (searchMigratedApps && !(r.resourceType === 'MigratedApp' || (r.resourceType === 'AltinnApp' && r.identifier.includes('_a2-')))) return false;
+      if (searchOwner && r.hasCompetentAuthority?.orgcode?.toLowerCase() !== searchOwner) return false;
       return true;
     });
   }, [resources, searchQuery, searchTypes, searchStatus, searchAvailableFor,
-    searchDelegable, searchVisible, searchSelfIdentified, searchEnterprise, searchAccessList, searchMigratedAltinn2, searchAltinnStudioApps, lang]);
+    searchDelegable, searchVisible, searchSelfIdentified, searchEnterprise, searchAccessList,
+    searchMigratedAltinn2, searchAltinnStudioApps, searchMigratedApps, searchOwner, lang]);
 
   const hasActiveFilters = !!(searchQuery || searchTypes.length > 0 || searchStatus ||
     searchAvailableFor.length > 0 || searchDelegable || searchVisible ||
-    searchSelfIdentified || searchEnterprise || searchAccessList || searchMigratedAltinn2 || searchAltinnStudioApps);
+    searchSelfIdentified || searchEnterprise || searchAccessList || searchMigratedAltinn2 || searchAltinnStudioApps ||
+    searchMigratedApps || searchOwner);
 
   // Quick search results
   const QUICK_SEARCH_LIMIT = 8;
@@ -390,6 +410,8 @@ export default function HomePage() {
     setSearchSelfIdentified(false); setSearchEnterprise(false); setSearchAccessList(false);
     setSearchMigratedAltinn2(false);
     setSearchAltinnStudioApps(false);
+    setSearchMigratedApps(false);
+    setSearchOwner('');
   }
 
   function pollStatsJob(
@@ -983,6 +1005,24 @@ export default function HomePage() {
                     </Fieldset>
                   )}
 
+                  {/* Service owner */}
+                  {distinctOwners.length > 0 && (
+                    <Fieldset>
+                      <Fieldset.Legend data-size="sm">{t('search.serviceOwner')}</Fieldset.Legend>
+                      <Select
+                        aria-label={t('search.serviceOwner')}
+                        data-size="sm"
+                        value={searchOwner}
+                        onChange={(e) => setSearchOwner((e.target as HTMLSelectElement).value)}
+                      >
+                        <Select.Option value="">{t('search.allOwners')}</Select.Option>
+                        {distinctOwners.map((o) => (
+                          <Select.Option key={o.code} value={o.code}>{o.name}</Select.Option>
+                        ))}
+                      </Select>
+                    </Fieldset>
+                  )}
+
                   {/* Status */}
                   {distinctStatuses.length > 0 && (
                     <Fieldset>
@@ -1059,6 +1099,12 @@ export default function HomePage() {
                       data-size="sm"
                       checked={searchAltinnStudioApps}
                       onChange={(e) => setSearchAltinnStudioApps((e.target as HTMLInputElement).checked)}
+                    />
+                    <Checkbox
+                      label={t('search.migratedApps')}
+                      data-size="sm"
+                      checked={searchMigratedApps}
+                      onChange={(e) => setSearchMigratedApps((e.target as HTMLInputElement).checked)}
                     />
                   </Fieldset>
                 </aside>

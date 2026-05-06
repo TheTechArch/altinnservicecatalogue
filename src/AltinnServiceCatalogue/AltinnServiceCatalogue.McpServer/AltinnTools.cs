@@ -25,7 +25,7 @@ public sealed class AltinnTools
         [Description("Filter by resource ID (partial match)")] string? id = null,
         [Description("Filter by title (partial match)")] string? title = null,
         [Description("Filter by description (partial match)")] string? description = null,
-        [Description("Filter by resource type, e.g. 'GenericAccessResource', 'Systemresource', 'MaskinportenSchema', 'Altinn2Service', 'AltinnApp', 'BrokerService', 'CorrespondenceService'")] string? resourceType = null,
+        [Description("Filter by resource type, e.g. 'GenericAccessResource', 'Systemresource', 'MaskinportenSchema', 'Altinn2Service', 'AltinnApp', 'MigratedApp', 'BrokerService', 'CorrespondenceService'")] string? resourceType = null,
         [Description("Filter by keyword")] string? keyword = null,
         [Description("Filter by reference (e.g. MaskinportenScope, ServiceCode)")] string? reference = null,
         CancellationToken ct = default)

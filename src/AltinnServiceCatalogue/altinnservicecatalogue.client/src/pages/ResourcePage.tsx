@@ -357,9 +357,10 @@ export default function ResourcePage() {
 
   const domain = env === 'prod' ? 'altinn.no' : 'tt02.altinn.no';
 
-  // AltinnApp migrated from Altinn 2 — identifier contains _a2- (e.g. app_mat_a2-3982-1)
+  // AltinnApp migrated from Altinn 2 — either MigratedApp resource type or AltinnApp with _a2- in identifier
   const isAltinnAppMigratedFromA2 =
-    resource.resourceType === 'AltinnApp' && resource.identifier.includes('_a2-');
+    resource.resourceType === 'MigratedApp' ||
+    (resource.resourceType === 'AltinnApp' && resource.identifier.includes('_a2-'));
 
   // AltinnApp not migrated — build app URL and Studio repo URL from ApplicationId reference
   const appRef =

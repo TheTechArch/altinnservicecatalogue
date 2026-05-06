@@ -193,6 +193,9 @@ const translations: Record<string, Record<Lang, string>> = {
   'search.accessListEnabled': { nb: 'Tilgangsliste aktivert', en: 'Access list enabled' },
   'search.migratedFromAltinn2': { nb: 'Migrert fra Altinn 2', en: 'Migrated from Altinn 2' },
   'search.altinnStudioApps': { nb: 'Kun Altinn Studio-apper', en: 'Only Altinn Studio apps' },
+  'search.migratedApps': { nb: 'Kun migrerte apper', en: 'Only migrated apps' },
+  'search.serviceOwner': { nb: 'Tjenesteeier', en: 'Service owner' },
+  'search.allOwners': { nb: 'Alle tjenesteeiere', en: 'All service owners' },
   'search.clearFilters': { nb: 'Nullstill filtre', en: 'Clear filters' },
   'search.results': { nb: 'tjenester', en: 'services' },
   'search.noResults': { nb: 'Ingen tjenester samsvarer med filtrene dine.', en: 'No services match your filters.' },
@@ -204,6 +207,7 @@ const translations: Record<string, Record<Lang, string>> = {
   'resourceType.MaskinportenSchema': { nb: 'Maskinporten-skjema', en: 'Maskinporten schema' },
   'resourceType.Altinn2Service': { nb: 'Altinn 2-tjeneste', en: 'Altinn 2 service' },
   'resourceType.AltinnApp': { nb: 'Altinn-app', en: 'Altinn app' },
+  'resourceType.MigratedApp': { nb: 'Migrert app', en: 'Migrated app' },
   'resourceType.GenericAccessResource': { nb: 'Generell tilgangsressurs', en: 'Generic access resource' },
   'resourceType.BrokerService': { nb: 'Meldingsformidler', en: 'Broker service' },
   'resourceType.CorrespondenceService': { nb: 'Korrespondansetjeneste', en: 'Correspondence service' },
@@ -229,6 +233,10 @@ const translations: Record<string, Record<Lang, string>> = {
   'resourceType.description.AltinnApp': {
     nb: 'En applikasjon bygget i Altinn Studio – den moderne plattformen for utvikling av offentlige digitale tjenester. Altinn-apper håndterer skjema, innsending og saksbehandling.',
     en: 'An application built in Altinn Studio – the modern platform for developing public digital services. Altinn apps handle forms, submissions and case processing.',
+  },
+  'resourceType.description.MigratedApp': {
+    nb: 'En Altinn-app som er migrert fra Altinn 2. Tjenesten er flyttet over til den moderne Altinn-plattformen, men har sitt opphav i en eldre Altinn 2-tjeneste.',
+    en: 'An Altinn app migrated from Altinn 2. The service has been moved to the modern Altinn platform, but originated as an older Altinn 2 service.',
   },
   'resourceType.description.GenericAccessResource': {
     nb: 'En generell tilgangsressurs som styrer hvem som har rett til å utføre bestemte handlinger, uten å være knyttet til en spesifikk tjenestetype.',

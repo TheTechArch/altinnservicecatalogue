@@ -3,6 +3,7 @@ import { useLang } from '../lang';
 
 export const RESOURCE_TYPE_COLORS: Record<string, string> = {
   AltinnApp: 'info',
+  MigratedApp: 'neutral',
   MaskinportenSchema: 'warning',
   GenericAccessResource: 'success',
   BrokerService: 'warning',

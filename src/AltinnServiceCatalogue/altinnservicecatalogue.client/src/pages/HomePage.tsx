@@ -30,8 +30,8 @@ const SEARCH_DISPLAY_LIMIT = 100;
 function toggleArrayItem(arr: string[], item: string): string[] {
   return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item];
 }
-import type { Org, OrgList, ServiceResource, AreaGroupDto, RoleDto, PackageDto, AuthLevelStatistics, StatsJobStatus } from '../types';
-import { getText, OrgLogo } from '../helpers';
+import type { Org, OrgList, ServiceResource, AreaGroupDto, RoleDto, PackageDto, AuthLevelStatistics, StatsJobStatus, AccessPackageStatistics, AccessPackageStatsJobStatus } from '../types';
+import { getText, OrgLogo, packagePath, getPackageUrnValue, fetchPackageGroupsBilingual } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
 import { ResourceTypeTag, RESOURCE_TYPE_COLORS } from '../components/ResourceTypeTag';
@@ -114,6 +114,13 @@ export default function HomePage() {
   const [showResLevel2List, setShowResLevel2List] = useState(false);
   const [showResOtherList, setShowResOtherList] = useState(false);
 
+  // Access package statistics state (policies without access package subjects)
+  const [apStatsData, setApStatsData] = useState<AccessPackageStatistics | null>(null);
+  const [loadingApStats, setLoadingApStats] = useState(false);
+  const [errorApStats, setErrorApStats] = useState<string | null>(null);
+  const [apStatsProgress, setApStatsProgress] = useState<{ progress: number; total: number } | null>(null);
+  const [showApWithoutList, setShowApWithoutList] = useState(false);
+
   // Quick search state (hero)
   const [quickSearch, setQuickSearch] = useState('');
   const [quickSearchFocused, setQuickSearchFocused] = useState(false);
@@ -177,11 +184,7 @@ export default function HomePage() {
   useEffect(() => {
     setLoadingPackages(true);
     setErrorPackages(null);
-    fetch(`/api/v1/${env}/meta/info/accesspackages/export`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`Failed to fetch packages: ${res.status}`);
-        return res.json() as Promise<AreaGroupDto[]>;
-      })
+    fetchPackageGroupsBilingual(env)
       .then((data) => {
         setGroups(data);
       })
@@ -252,7 +255,9 @@ export default function HomePage() {
             packages: (a.packages ?? []).filter(
               (p) =>
                 p.name.toLowerCase().includes(q) ||
-                p.description?.toLowerCase().includes(q),
+                p.description?.toLowerCase().includes(q) ||
+                p.nameEn?.toLowerCase().includes(q) ||
+                p.descriptionEn?.toLowerCase().includes(q),
             ),
           }))
           .filter((a) => a.packages.length > 0 || a.name.toLowerCase().includes(q)),
@@ -324,7 +329,7 @@ export default function HomePage() {
   }, [resources]);
 
   const availableResourceTypes = useMemo(() =>
-    RESOURCE_TYPES.filter((t) => resources.some((r) => r.resourceType === t)),
+    RESOURCE_TYPES.filter((t) => t === 'MigratedApp' || resources.some((r) => r.resourceType === t)),
     [resources],
   );
 
@@ -389,7 +394,7 @@ export default function HomePage() {
     for (const g of groups) {
       for (const a of g.areas ?? []) {
         for (const p of a.packages ?? []) {
-          if (p.id.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.urn.toLowerCase().includes(q)) {
+          if (p.id.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.urn.toLowerCase().includes(q) || p.nameEn?.toLowerCase().includes(q)) {
             packages.push({ pkg: p, areaName: a.name, groupName: g.name });
             if (packages.length >= QUICK_SEARCH_LIMIT) break;
           }
@@ -403,6 +408,13 @@ export default function HomePage() {
   }, [quickSearch, resources, groups, lang]);
 
   const hasQuickResults = quickSearchResults.services.length > 0 || quickSearchResults.packages.length > 0;
+
+  function submitQuickSearch() {
+    const q = quickSearch.trim();
+    if (q.length < 2) return;
+    setQuickSearch('');
+    navigate(`/results?q=${encodeURIComponent(q)}`);
+  }
 
   function clearSearchFilters() {
     setSearchQuery(''); setSearchTypes([]); setSearchStatus('');
@@ -495,6 +507,78 @@ export default function HomePage() {
       });
   }
 
+  function pollApStatsJob() {
+    const poll = () => {
+      fetch(`/api/v1/${env}/resource/statistics/accesspackages/status`)
+        .then((res) => res.json() as Promise<AccessPackageStatsJobStatus>)
+        .then((job) => {
+          if (job.status === 'done' && job.result) {
+            setApStatsData(job.result);
+            setLoadingApStats(false);
+            setApStatsProgress(null);
+          } else if (job.status === 'error') {
+            setErrorApStats(job.error ?? 'Unknown error');
+            setLoadingApStats(false);
+            setApStatsProgress(null);
+          } else {
+            setApStatsProgress({ progress: job.progress ?? 0, total: job.total ?? 0 });
+            setTimeout(poll, 2000);
+          }
+        })
+        .catch((err) => {
+          setErrorApStats(err.message);
+          setLoadingApStats(false);
+          setApStatsProgress(null);
+        });
+    };
+    poll();
+  }
+
+  function fetchAccessPackageStats(reloadFromXacml = false) {
+    setLoadingApStats(true);
+    setErrorApStats(null);
+    setApStatsData(null);
+    setApStatsProgress(null);
+    fetch(`/api/v1/${env}/resource/statistics/accesspackages/start${reloadFromXacml ? '?reloadFromXacml=true' : ''}`, { method: 'POST' })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed: ${res.status}`);
+        return res.json() as Promise<AccessPackageStatsJobStatus>;
+      })
+      .then((job) => {
+        if (job.status === 'done' && job.result) {
+          setApStatsData(job.result);
+          setLoadingApStats(false);
+        } else {
+          pollApStatsJob();
+        }
+      })
+      .catch((err) => {
+        setErrorApStats(err.message);
+        setLoadingApStats(false);
+      });
+  }
+
+  function downloadMissingPackagesCsv() {
+    if (!apStatsData) return;
+    const escape = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`;
+    const header = ['org', 'resourceid', 'name'];
+    const rows = apStatsData.withoutAccessPackages.map((r) => [
+      r.hasCompetentAuthority?.orgcode ?? '',
+      r.identifier,
+      getText(r.title, lang) || r.identifier,
+    ]);
+    const csv = [header, ...rows].map((cols) => cols.map(escape).join(',')).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `policies-without-access-packages-${env}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <>
       {/* Hero */}
@@ -529,6 +613,9 @@ export default function HomePage() {
               onChange={(e) => setQuickSearch(e.target.value)}
               onFocus={() => setQuickSearchFocused(true)}
               onBlur={() => setTimeout(() => setQuickSearchFocused(false), 200)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') submitQuickSearch();
+              }}
             />
             <SearchClear onClick={() => setQuickSearch('')} />
           </Search>
@@ -569,19 +656,34 @@ export default function HomePage() {
                   {quickSearchResults.packages.map(({ pkg, areaName, groupName }) => (
                     <Link
                       key={pkg.id}
-                      to={`/package/${encodeURIComponent(pkg.id)}`}
+                      to={packagePath(pkg)}
+                      state={{ pkg }}
                       className="block px-4 py-2 no-underline"
                       style={{ color: 'var(--ds-color-neutral-text-default)' }}
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--ds-color-neutral-surface-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       onClick={() => setQuickSearch('')}
                     >
-                      <div className="font-medium text-sm">{pkg.name}</div>
-                      <div className="text-xs" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>{groupName} &rsaquo; {areaName} &mdash; {pkg.id}</div>
+                      <div className="font-medium text-sm">
+                        {pkg.name}
+                        {pkg.nameEn && pkg.nameEn !== pkg.name && (
+                          <span className="font-normal" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}> / {pkg.nameEn}</span>
+                        )}
+                      </div>
+                      <div className="text-xs" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>{groupName} &rsaquo; {areaName} &mdash; {pkg.urn ? getPackageUrnValue(pkg.urn) : pkg.id}</div>
                     </Link>
                   ))}
                 </div>
               )}
+
+              <Link
+                to={`/results?q=${encodeURIComponent(quickSearch.trim())}`}
+                className="block px-4 py-3 no-underline text-center text-sm font-medium"
+                style={{ color: 'var(--ds-color-base-default)', borderTop: '1px solid var(--ds-color-neutral-border-subtle)' }}
+                onClick={() => setQuickSearch('')}
+              >
+                {t('quicksearch.showAll')} &rarr;
+              </Link>
             </div>
           )}
         </div>
@@ -827,7 +929,7 @@ export default function HomePage() {
                       {(area.packages ?? []).map((pkg) => (
                         <Link
                           key={pkg.id}
-                          to={`/package/${pkg.id}`}
+                          to={packagePath(pkg)}
                           state={{ pkg }}
                           className="no-underline"
                         >
@@ -836,6 +938,11 @@ export default function HomePage() {
                               <Heading level={5} data-size="2xs">
                                 {pkg.name}
                               </Heading>
+                              {pkg.nameEn && pkg.nameEn !== pkg.name && (
+                                <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                                  {pkg.nameEn}
+                                </Paragraph>
+                              )}
                               {pkg.description && (
                                 <Paragraph data-size="sm" className="text-gray-600 line-clamp-2">
                                   {pkg.description}
@@ -1623,6 +1730,120 @@ export default function HomePage() {
                   <Button variant="secondary" data-size="sm" onClick={fetchResourceAuthLevelStats}>
                     {t('stats.res.calculate')}
                   </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Access package statistics (policies without access packages) */}
+            <div className="mt-12 pt-8 border-t border-neutral-300">
+              <Heading level={2} data-size="md" className="mb-2">{t('stats.ap.title')}</Heading>
+              <Paragraph className="mb-6" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                {t('stats.ap.description')}
+              </Paragraph>
+
+              {!apStatsData && !loadingApStats && (
+                <div className="flex flex-wrap gap-2">
+                  <Button data-size="md" onClick={() => fetchAccessPackageStats()}>
+                    {t('stats.ap.calculate')}
+                  </Button>
+                  <Button variant="secondary" data-size="md" onClick={() => fetchAccessPackageStats(true)}>
+                    {t('stats.ap.reloadXacml')}
+                  </Button>
+                </div>
+              )}
+
+              {loadingApStats && (
+                <div className="flex flex-col items-center gap-4 py-20">
+                  <Spinner aria-label={t('stats.ap.calculating')} data-size="lg" />
+                  <Paragraph>{t('stats.ap.calculating')}</Paragraph>
+                  {apStatsProgress && apStatsProgress.total > 0 && (
+                    <Paragraph data-size="sm">{t('stats.progress').replace('{progress}', String(apStatsProgress.progress)).replace('{total}', String(apStatsProgress.total))}</Paragraph>
+                  )}
+                </div>
+              )}
+
+              {errorApStats && (
+                <Alert data-color="danger" className="mb-6">
+                  {t('error.loadData')}: {errorApStats}
+                </Alert>
+              )}
+
+              {apStatsData && !loadingApStats && (
+                <div className="space-y-6">
+                  {/* Summary cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Card data-color="neutral">
+                      <CardBlock>
+                        <Heading level={3} data-size="2xl" className="text-center">{apStatsData.totalPolicies}</Heading>
+                        <Paragraph data-size="sm" className="text-center">{t('stats.ap.total')}</Paragraph>
+                      </CardBlock>
+                    </Card>
+                    <Card data-color="success">
+                      <CardBlock>
+                        <Heading level={3} data-size="2xl" className="text-center">{apStatsData.withAccessPackages}</Heading>
+                        <Paragraph data-size="sm" className="text-center">{t('stats.ap.with')}</Paragraph>
+                      </CardBlock>
+                    </Card>
+                    <Card data-color="warning">
+                      <CardBlock>
+                        <Heading level={3} data-size="2xl" className="text-center">{apStatsData.withoutAccessPackages.length}</Heading>
+                        <Paragraph data-size="sm" className="text-center">{t('stats.ap.without')}</Paragraph>
+                      </CardBlock>
+                    </Card>
+                    <Card data-color="neutral">
+                      <CardBlock>
+                        <Heading level={3} data-size="2xl" className="text-center">{apStatsData.errorCount}</Heading>
+                        <Paragraph data-size="sm" className="text-center">{t('stats.ap.errors')}</Paragraph>
+                      </CardBlock>
+                    </Card>
+                  </div>
+
+                  {/* Without access packages list */}
+                  {apStatsData.withoutAccessPackages.length > 0 && (
+                    <div>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <Button variant="secondary" data-size="sm" onClick={() => setShowApWithoutList(!showApWithoutList)}>
+                          {showApWithoutList ? t('stats.hideList') : t('stats.showList')}: {t('stats.ap.without')} ({apStatsData.withoutAccessPackages.length})
+                        </Button>
+                        <Button variant="secondary" data-size="sm" onClick={downloadMissingPackagesCsv}>
+                          {t('stats.ap.downloadCsv')}
+                        </Button>
+                      </div>
+                      {showApWithoutList && (
+                        <div className="grid gap-2">
+                          {apStatsData.withoutAccessPackages.map((r) => (
+                            <Card key={r.identifier} data-color="warning" className="p-0">
+                              <CardBlock>
+                                <div className="flex items-center justify-between gap-4">
+                                  <div>
+                                    <Link to={`/resource/${r.identifier}`} className="font-semibold">
+                                      {getText(r.title, lang) || r.identifier}
+                                    </Link>
+                                    <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                                      {r.identifier} — {r.hasCompetentAuthority?.orgcode}
+                                    </Paragraph>
+                                  </div>
+                                  <Tag data-size="sm" data-color={r.subjectCount > 0 ? 'info' : 'neutral'}>
+                                    {r.subjectCount > 0 ? t('stats.ap.onlyRoles') : t('stats.ap.noSubjects')}
+                                  </Tag>
+                                </div>
+                              </CardBlock>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Recalculate buttons */}
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" data-size="sm" onClick={() => fetchAccessPackageStats()}>
+                      {t('stats.ap.calculate')}
+                    </Button>
+                    <Button variant="secondary" data-size="sm" onClick={() => fetchAccessPackageStats(true)}>
+                      {t('stats.ap.reloadXacml')}
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

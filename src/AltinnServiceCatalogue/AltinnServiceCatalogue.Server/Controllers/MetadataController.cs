@@ -46,6 +46,7 @@ public class MetadataController(
     [ProducesResponseType<List<AreaGroupDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportPackages(
         [FromRoute] string environment,
+        [FromQuery] string? language,
         CancellationToken ct)
     {
         if (!TryResolveBaseUrl(environment, out var baseUrl))
@@ -53,7 +54,7 @@ public class MetadataController(
 
         try
         {
-            var result = await client.ExportPackagesAsync(baseUrl, ct);
+            var result = await client.ExportPackagesAsync(baseUrl, language, ct);
             return Ok(result);
         }
         catch (HttpRequestException ex)

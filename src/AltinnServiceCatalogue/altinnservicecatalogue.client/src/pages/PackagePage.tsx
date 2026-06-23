@@ -10,6 +10,7 @@ import {
   CardBlock,
 } from '@digdir/designsystemet-react';
 import type { PackageDto, MetaResource, AreaGroupDto, PolicyRule, RoleDto } from '../types';
+import { getPackageUrnValue } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
 
@@ -19,12 +20,6 @@ interface SearchResult {
 }
 
 const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** Extract the short accesspackage value from a URN like "urn:altinn:accesspackage:motorvognavgift" */
-function getPackageUrnValue(urn: string): string {
-  const parts = urn.split(':');
-  return parts[parts.length - 1];
-}
 
 /** Fetch policy rules for a resource and extract actions granted to a specific access package */
 async function fetchActionsForPackage(
@@ -373,7 +368,8 @@ export default function PackagePage() {
  * Fetch a package by either GUID or URN suffix.
  * 1. If statePkg is passed (navigation from HomePage), search by name to get resources.
  * 2. If packageId is a GUID, fetch directly via /accesspackages/{id}.
- * 3. Otherwise treat it as a URN suffix and fetch via /accesspackages/urn/{value}.
+ * 3. Fall back to the export data, matching either the GUID or the URN suffix —
+ *    the upstream /{id} and /urn/ endpoints are unreliable.
  * 4. Once we have the package, enrich with area/group info from the export if needed.
  */
 async function fetchPackage(env: string, packageId: string, statePkg: PackageDto | null): Promise<PackageDto | null> {
@@ -399,9 +395,7 @@ async function fetchPackage(env: string, packageId: string, statePkg: PackageDto
   }
 
   if (!pkg) {
-    // Lookup by URN suffix via export data — the upstream /urn/ endpoint is unreliable,
-    // so we search the full export matching the URN suffix against the package URN.
-    pkg = await findPackageByUrnSuffix(env, packageId);
+    pkg = await findPackageInExport(env, packageId);
   }
 
   if (!pkg) return null;
@@ -424,17 +418,18 @@ async function searchForPackage(env: string, name: string, id: string): Promise<
   return match?.object ?? null;
 }
 
-/** Find a package by URN suffix (e.g. "starte-drive-endre-avvikle-virksomhet") from the export data */
-async function findPackageByUrnSuffix(env: string, urnSuffix: string): Promise<PackageDto | null> {
+/** Find a package by GUID or URN suffix (e.g. "starte-drive-endre-avvikle-virksomhet") from the export data */
+async function findPackageInExport(env: string, idOrUrnSuffix: string): Promise<PackageDto | null> {
   const res = await fetch(`/api/v1/${env}/meta/info/accesspackages/export`);
   if (!res.ok) return null;
   const groups: AreaGroupDto[] = await res.json();
 
-  const suffix = urnSuffix.toLowerCase();
+  const key = idOrUrnSuffix.toLowerCase();
   for (const group of groups) {
     for (const area of group.areas ?? []) {
       const found = (area.packages ?? []).find((p) =>
-        p.urn && getPackageUrnValue(p.urn).toLowerCase() === suffix,
+        p.id.toLowerCase() === key ||
+        (p.urn && getPackageUrnValue(p.urn).toLowerCase() === key),
       );
       if (found) {
         found.area = { ...area, packages: undefined, group: { ...group, areas: undefined } } as PackageDto['area'];

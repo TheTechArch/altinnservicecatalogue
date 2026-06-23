@@ -1,8 +1,60 @@
 import { useState } from 'react';
+import type { AreaGroupDto } from './types';
 
 export function getText(dict: Record<string, string> | undefined | null, lang: string = 'nb'): string {
   if (!dict) return '';
   return dict[lang] || Object.values(dict)[0] || '';
+}
+
+/** Extract the short accesspackage value from a URN like "urn:altinn:accesspackage:motorvognavgift" */
+export function getPackageUrnValue(urn: string): string {
+  const parts = urn.split(':');
+  return parts[parts.length - 1];
+}
+
+/** Build a readable link to a package page, preferring the URN slug over the GUID */
+export function packagePath(pkg: { id: string; urn?: string | null }): string {
+  const slug = pkg.urn ? getPackageUrnValue(pkg.urn) : pkg.id;
+  return `/package/${encodeURIComponent(slug)}`;
+}
+
+/**
+ * Fetch the access package export in both Norwegian and English and merge them,
+ * attaching nameEn/descriptionEn to each package. English is nice-to-have:
+ * if that fetch fails, the Norwegian export is returned as-is.
+ */
+export async function fetchPackageGroupsBilingual(env: string): Promise<AreaGroupDto[]> {
+  const [nbGroups, enGroups] = await Promise.all([
+    fetch(`/api/v1/${env}/meta/info/accesspackages/export`).then((res) => {
+      if (!res.ok) throw new Error(`Failed to fetch packages: ${res.status}`);
+      return res.json() as Promise<AreaGroupDto[]>;
+    }),
+    fetch(`/api/v1/${env}/meta/info/accesspackages/export?language=eng`)
+      .then((res) => (res.ok ? (res.json() as Promise<AreaGroupDto[]>) : null))
+      .catch(() => null),
+  ]);
+
+  if (!enGroups) return nbGroups;
+
+  const enById = new Map<string, { name: string; description: string }>();
+  for (const g of enGroups) {
+    for (const a of g.areas ?? []) {
+      for (const p of a.packages ?? []) {
+        enById.set(p.id, { name: p.name, description: p.description });
+      }
+    }
+  }
+
+  return nbGroups.map((g) => ({
+    ...g,
+    areas: (g.areas ?? []).map((a) => ({
+      ...a,
+      packages: (a.packages ?? []).map((p) => {
+        const en = enById.get(p.id);
+        return en ? { ...p, nameEn: en.name, descriptionEn: en.description } : p;
+      }),
+    })),
+  }));
 }
 
 export function OrgLogo({ src, alt, fallback }: { src: string; alt: string; fallback: string }) {

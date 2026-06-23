@@ -114,6 +114,9 @@ export interface PackageDto {
   name: string;
   urn: string;
   description: string;
+  /** English texts merged client-side from the language=eng export */
+  nameEn?: string;
+  descriptionEn?: string;
   isDelegable: boolean;
   isAssignable: boolean;
   isResourcePolicyAvailable: boolean;
@@ -231,5 +234,30 @@ export interface StatsJobStatus {
   progress?: number;
   total?: number;
   result?: AuthLevelStatistics;
+  error?: string;
+}
+
+export interface PolicyAccessPackageEntry {
+  identifier: string;
+  title: Record<string, string>;
+  hasCompetentAuthority?: CompetentAuthority;
+  resourceType: string | null;
+  accessPackageCount: number;
+  subjectCount: number;
+  error: boolean;
+}
+
+export interface AccessPackageStatistics {
+  totalPolicies: number;
+  withAccessPackages: number;
+  withoutAccessPackages: PolicyAccessPackageEntry[];
+  errorCount: number;
+}
+
+export interface AccessPackageStatsJobStatus {
+  status: 'running' | 'done' | 'error' | 'not_started';
+  progress?: number;
+  total?: number;
+  result?: AccessPackageStatistics;
   error?: string;
 }

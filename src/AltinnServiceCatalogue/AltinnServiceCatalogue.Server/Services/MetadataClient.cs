@@ -48,13 +48,17 @@ public class MetadataClient(
         return await response.Content.ReadFromJsonAsync<List<SearchObjectOfPackageDto>>(JsonOptions, ct) ?? [];
     }
 
-    public async Task<List<AreaGroupDto>> ExportPackagesAsync(string baseUrl, CancellationToken ct)
+    public async Task<List<AreaGroupDto>> ExportPackagesAsync(string baseUrl, string? language, CancellationToken ct)
     {
         var client = CreateClient();
         var url = $"{baseUrl}{BasePath}/info/accesspackages/export";
-        logger.LogInformation("Fetching package export from {Url}", url);
+        logger.LogInformation("Fetching package export from {Url} (language: {Language})", url, language ?? "default");
 
-        var response = await client.GetAsync(url, ct);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        if (!string.IsNullOrEmpty(language))
+            request.Headers.Add("Accept-Language", language);
+
+        var response = await client.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<List<AreaGroupDto>>(JsonOptions, ct) ?? [];
     }

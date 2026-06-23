@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Xml;
 using Altinn.Authorization.ABAC.Utils;
 using Altinn.Authorization.ABAC.Xacml;
@@ -189,6 +190,7 @@ public class ResourceRegistryController(
     public async Task<IActionResult> GetResourcePolicySubjects(
         [FromRoute] string environment,
         [FromRoute] string id,
+        [FromQuery] bool? reloadFromXacml,
         CancellationToken ct)
     {
         if (!TryResolveBaseUrl(environment, out var baseUrl))
@@ -196,7 +198,7 @@ public class ResourceRegistryController(
 
         try
         {
-            var stream = await client.GetResourcePolicySubjectsAsync(baseUrl, id, ct);
+            var stream = await client.GetResourcePolicySubjectsAsync(baseUrl, id, reloadFromXacml == true, ct);
             return new FileStreamResult(stream, "application/json");
         }
         catch (HttpRequestException ex)
@@ -486,6 +488,160 @@ public class ResourceRegistryController(
         return Ok(new { status = "running", progress = job.Progress, total = job.Total });
     }
 
+    // ── Access package statistics: policies without any access package subjects ──
+
+    [HttpPost("statistics/accesspackages/start")]
+    [Produces("application/json")]
+    public IActionResult StartAccessPackageStatistics(
+        [FromRoute] string environment,
+        [FromQuery] bool reloadFromXacml = false)
+    {
+        if (!TryResolveBaseUrl(environment, out var baseUrl))
+            return BadRequest($"Unknown environment: {environment}");
+
+        var jobKey = $"accesspkg-stats-job-{environment}";
+
+        memoryCache.TryGetValue(jobKey, out AccessPackageStatsJob? existing);
+
+        // A reload forces a fresh run from XACML; otherwise reuse a completed result.
+        if (!reloadFromXacml && existing?.Status == "done")
+            return Ok(new { jobId = jobKey, status = "done" });
+
+        if (existing?.Status == "running")
+            return Ok(new { jobId = jobKey, status = "running", progress = existing.Progress, total = existing.Total });
+
+        var job = new AccessPackageStatsJob { Status = "running" };
+        memoryCache.Set(jobKey, job, TimeSpan.FromMinutes(30));
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                // includeApps + always-on includeMigratedApps brings in Altinn 3 apps and migrated apps
+                // (MigratedApp type and _a2- AltinnApp); includeAltinn2: false excludes legacy Altinn 2 services.
+                var allResources = await cacheService.GetResourceListAsync(baseUrl, includeApps: true, includeAltinn2: false, CancellationToken.None);
+                var filtered = allResources
+                    .Where(r => r.Identifier is not null
+                        && r.ResourceType != Altinn.Authorization.Api.Contracts.ResourceType.Altinn2Service)
+                    .ToList();
+
+                job.Total = filtered.Count;
+
+                const int maxConcurrency = 20;
+                using var semaphore = new SemaphoreSlim(maxConcurrency);
+
+                var tasks = filtered.Select(async resource =>
+                {
+                    await semaphore.WaitAsync(CancellationToken.None);
+                    try
+                    {
+                        var (pkgCount, subjectCount) = await CountAccessPackageSubjects(baseUrl, resource.Identifier!, reloadFromXacml, CancellationToken.None);
+                        Interlocked.Increment(ref job.Progress);
+                        return new PolicyAccessPackageEntry
+                        {
+                            Identifier = resource.Identifier!,
+                            Title = resource.Title,
+                            HasCompetentAuthority = resource.HasCompetentAuthority,
+                            ResourceType = resource.ResourceType.ToString(),
+                            AccessPackageCount = pkgCount,
+                            SubjectCount = subjectCount,
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to fetch policy subjects for {Id}", resource.Identifier);
+                        Interlocked.Increment(ref job.Progress);
+                        return new PolicyAccessPackageEntry
+                        {
+                            Identifier = resource.Identifier!,
+                            Title = resource.Title,
+                            HasCompetentAuthority = resource.HasCompetentAuthority,
+                            ResourceType = resource.ResourceType.ToString(),
+                            Error = true,
+                        };
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                });
+
+                var entries = (await Task.WhenAll(tasks)).ToList();
+                var valid = entries.Where(e => !e.Error).ToList();
+
+                job.Result = new AccessPackageStatistics
+                {
+                    TotalPolicies = valid.Count,
+                    WithAccessPackages = valid.Count(e => e.AccessPackageCount > 0),
+                    WithoutAccessPackages = valid
+                        .Where(e => e.AccessPackageCount == 0)
+                        .OrderBy(e => e.Identifier, StringComparer.OrdinalIgnoreCase)
+                        .ToList(),
+                    ErrorCount = entries.Count(e => e.Error),
+                };
+                job.Status = "done";
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Background access package stats job failed for {Environment}", environment);
+                job.Status = "error";
+                job.ErrorMessage = ex.Message;
+            }
+        });
+
+        return Accepted(new { jobId = jobKey, status = "running", progress = 0, total = 0 });
+    }
+
+    [HttpGet("statistics/accesspackages/status")]
+    [Produces("application/json")]
+    public IActionResult GetAccessPackageStatisticsStatus([FromRoute] string environment)
+    {
+        var jobKey = $"accesspkg-stats-job-{environment}";
+
+        if (!memoryCache.TryGetValue(jobKey, out AccessPackageStatsJob? job) || job is null)
+            return NotFound(new { status = "not_started" });
+
+        if (job.Status == "done")
+            return Ok(new { status = "done", result = job.Result });
+
+        if (job.Status == "error")
+            return Ok(new { status = "error", error = job.ErrorMessage });
+
+        return Ok(new { status = "running", progress = job.Progress, total = job.Total });
+    }
+
+    private async Task<(int accessPackageCount, int subjectCount)> CountAccessPackageSubjects(string baseUrl, string id, bool reloadFromXacml, CancellationToken ct)
+    {
+        var cacheKey = $"policy-accesspackages-{baseUrl}-{id}";
+
+        // A reload bypasses our cache and forces the registry to re-derive subjects from the policy XACML.
+        if (!reloadFromXacml && memoryCache.TryGetValue(cacheKey, out (int accessPackageCount, int subjectCount) cached))
+            return cached;
+
+        await using var stream = await client.GetResourcePolicySubjectsAsync(baseUrl, id, reloadFromXacml, ct);
+        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+
+        int accessPackageCount = 0;
+        int subjectCount = 0;
+
+        if (doc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in data.EnumerateArray())
+            {
+                subjectCount++;
+                if (item.TryGetProperty("type", out var type)
+                    && type.GetString() == "urn:altinn:accesspackage")
+                {
+                    accessPackageCount++;
+                }
+            }
+        }
+
+        var result = (accessPackageCount, subjectCount);
+        memoryCache.Set(cacheKey, result, PolicyCacheDuration);
+        return result;
+    }
+
     private async Task<(int? userLevel, int? orgLevel)> ParseSecurityLevel(string baseUrl, string id, CancellationToken ct)
     {
         var cacheKey = $"policy-authlevel-{baseUrl}-{id}";
@@ -558,5 +714,33 @@ public class StatsJob
     public int Progress;
     public int Total;
     public AuthLevelStatistics? Result { get; set; }
+    public string? ErrorMessage { get; set; }
+}
+
+public class PolicyAccessPackageEntry
+{
+    public string Identifier { get; set; } = string.Empty;
+    public Dictionary<string, string>? Title { get; set; }
+    public CompetentAuthority? HasCompetentAuthority { get; set; }
+    public string? ResourceType { get; set; }
+    public int AccessPackageCount { get; set; }
+    public int SubjectCount { get; set; }
+    public bool Error { get; set; }
+}
+
+public class AccessPackageStatistics
+{
+    public int TotalPolicies { get; set; }
+    public int WithAccessPackages { get; set; }
+    public List<PolicyAccessPackageEntry> WithoutAccessPackages { get; set; } = [];
+    public int ErrorCount { get; set; }
+}
+
+public class AccessPackageStatsJob
+{
+    public string Status { get; set; } = "running";
+    public int Progress;
+    public int Total;
+    public AccessPackageStatistics? Result { get; set; }
     public string? ErrorMessage { get; set; }
 }

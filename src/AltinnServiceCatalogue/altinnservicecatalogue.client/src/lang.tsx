@@ -170,11 +170,22 @@ const translations: Record<string, Record<Lang, string>> = {
   'keyword.noMatch': { nb: 'Ingen tjenester samsvarer med søket ditt.', en: 'No services match your search.' },
 
   // Quick search (hero)
-  'quicksearch.placeholder': { nb: 'Søk etter tjeneste-ID eller pakke-ID...', en: 'Search by service ID or package ID...' },
-  'quicksearch.aria': { nb: 'Hurtigsøk etter ID', en: 'Quick search by ID' },
+  'quicksearch.placeholder': { nb: 'Søk etter tjeneste eller tilgangspakke (navn eller ID)...', en: 'Search for service or access package (name or ID)...' },
+  'quicksearch.aria': { nb: 'Hurtigsøk etter tjeneste eller tilgangspakke', en: 'Quick search for service or access package' },
   'quicksearch.services': { nb: 'Tjenester', en: 'Services' },
   'quicksearch.packages': { nb: 'Tilgangspakker', en: 'Access packages' },
   'quicksearch.noResults': { nb: 'Ingen treff', en: 'No results' },
+  'quicksearch.showAll': { nb: 'Vis alle treff', en: 'Show all results' },
+
+  // Search results page
+  'results.title': { nb: 'Søkeresultater', en: 'Search results' },
+  'results.back': { nb: 'Tilbake til forsiden', en: 'Back to home' },
+  'results.search.placeholder': { nb: 'Søk etter tjenester og tilgangspakker...', en: 'Search for services and access packages...' },
+  'results.search.aria': { nb: 'Søk etter tjenester og tilgangspakker', en: 'Search for services and access packages' },
+  'results.services': { nb: 'Tjenester', en: 'Services' },
+  'results.packages': { nb: 'Tilgangspakker', en: 'Access packages' },
+  'results.noResults': { nb: 'Ingen treff for', en: 'No results for' },
+  'results.empty': { nb: 'Skriv inn minst to tegn for å søke.', en: 'Enter at least two characters to search.' },
 
   // Advanced Search tab
   'home.tabs.search': { nb: 'Avansert søk', en: 'Advanced search' },
@@ -207,7 +218,7 @@ const translations: Record<string, Record<Lang, string>> = {
   'resourceType.MaskinportenSchema': { nb: 'Maskinporten-skjema', en: 'Maskinporten schema' },
   'resourceType.Altinn2Service': { nb: 'Altinn 2-tjeneste', en: 'Altinn 2 service' },
   'resourceType.AltinnApp': { nb: 'Altinn-app', en: 'Altinn app' },
-  'resourceType.MigratedApp': { nb: 'Migrert app', en: 'Migrated app' },
+  'resourceType.MigratedApp': { nb: 'Migrert Arkiv App', en: 'Migrated Archive App' },
   'resourceType.GenericAccessResource': { nb: 'Generell tilgangsressurs', en: 'Generic access resource' },
   'resourceType.BrokerService': { nb: 'Meldingsformidler', en: 'Broker service' },
   'resourceType.CorrespondenceService': { nb: 'Korrespondansetjeneste', en: 'Correspondence service' },
@@ -235,8 +246,8 @@ const translations: Record<string, Record<Lang, string>> = {
     en: 'An application built in Altinn Studio – the modern platform for developing public digital services. Altinn apps handle forms, submissions and case processing.',
   },
   'resourceType.description.MigratedApp': {
-    nb: 'En Altinn-app som er migrert fra Altinn 2. Tjenesten er flyttet over til den moderne Altinn-plattformen, men har sitt opphav i en eldre Altinn 2-tjeneste.',
-    en: 'An Altinn app migrated from Altinn 2. The service has been moved to the modern Altinn platform, but originated as an older Altinn 2 service.',
+    nb: 'Brukes for å gi tilgang til arkiverte data fra Altinn 2-plattformen. Tjenesten er ikke lenger aktiv, men dataene er flyttet over til Altinn-plattformen og kan fortsatt hentes ut.',
+    en: 'Used to grant access to archived data from the Altinn 2 platform. The service is no longer active, but the data has been moved to the Altinn platform and can still be retrieved.',
   },
   'resourceType.description.GenericAccessResource': {
     nb: 'En generell tilgangsressurs som styrer hvem som har rett til å utføre bestemte handlinger, uten å være knyttet til en spesifikk tjenestetype.',
@@ -364,6 +375,19 @@ const translations: Record<string, Record<Lang, string>> = {
   'stats.res.total': { nb: 'Totalt ressurser', en: 'Total resources' },
   'stats.res.errors': { nb: 'Feil ved henting', en: 'Errors fetching' },
   'stats.res.resources': { nb: 'ressurser', en: 'resources' },
+  'stats.ap.title': { nb: 'Policyer uten tilgangspakker', en: 'Policies without access packages' },
+  'stats.ap.description': { nb: 'Identifiserer ressurser hvis policy ikke har noen tilgangspakker som subjekt (kun roller, eller ingen subjekter).', en: 'Identifies resources whose policy has no access packages as subject (roles only, or no subjects at all).' },
+  'stats.ap.calculate': { nb: 'Beregn statistikk for tilgangspakker', en: 'Calculate access package statistics' },
+  'stats.ap.calculating': { nb: 'Henter policy-subjekter og beregner...', en: 'Fetching policy subjects and calculating...' },
+  'stats.ap.total': { nb: 'Totalt policyer', en: 'Total policies' },
+  'stats.ap.with': { nb: 'Med tilgangspakker', en: 'With access packages' },
+  'stats.ap.without': { nb: 'Uten tilgangspakker', en: 'Without access packages' },
+  'stats.ap.errors': { nb: 'Feil ved henting', en: 'Errors fetching' },
+  'stats.ap.resources': { nb: 'ressurser', en: 'resources' },
+  'stats.ap.noSubjects': { nb: 'Ingen subjekter', en: 'No subjects' },
+  'stats.ap.onlyRoles': { nb: 'Kun roller', en: 'Roles only' },
+  'stats.ap.downloadCsv': { nb: 'Last ned CSV', en: 'Download CSV' },
+  'stats.ap.reloadXacml': { nb: 'Last på nytt fra XACML', en: 'Reload from XACML' },
 };
 
 const LangContext = createContext<LangContextValue | null>(null);

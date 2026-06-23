@@ -109,10 +109,12 @@ public class ResourceRegistryClient(IHttpClientFactory httpClientFactory, ILogge
         return await response.Content.ReadAsStreamAsync(ct);
     }
 
-    public async Task<Stream> GetResourcePolicySubjectsAsync(string baseUrl, string id, CancellationToken ct)
+    public async Task<Stream> GetResourcePolicySubjectsAsync(string baseUrl, string id, bool reloadFromXacml = false, CancellationToken ct = default)
     {
         var client = CreateClient();
         var url = $"{baseUrl}{BasePath}/{Uri.EscapeDataString(id)}/policy/subjects";
+        if (reloadFromXacml)
+            url += "?reloadFromXacml=true";
 
         var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
         response.EnsureSuccessStatusCode();

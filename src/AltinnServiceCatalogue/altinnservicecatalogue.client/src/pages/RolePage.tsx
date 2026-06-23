@@ -10,6 +10,7 @@ import {
   CardBlock,
 } from '@digdir/designsystemet-react';
 import type { RoleDto, SubjectResourcesResponse, PolicyRule, PackageDto } from '../types';
+import { packagePath } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
 
@@ -359,7 +360,7 @@ export default function RolePage() {
             {packages.map((pkg) => (
               <Link
                 key={pkg.id}
-                to={`/package/${encodeURIComponent(pkg.id)}`}
+                to={packagePath(pkg)}
                 state={{ pkg }}
                 className="no-underline"
               >

@@ -9,7 +9,7 @@ public interface IMetadataClient
 {
     // Packages
     Task<List<SearchObjectOfPackageDto>> SearchPackagesAsync(string baseUrl, string? term, string[]? resourceProviderCode, bool? searchInResources, string? typeName, CancellationToken ct = default);
-    Task<List<AreaGroupDto>> ExportPackagesAsync(string baseUrl, CancellationToken ct = default);
+    Task<List<AreaGroupDto>> ExportPackagesAsync(string baseUrl, string? language = null, CancellationToken ct = default);
     Task<List<AreaGroupDto>> GetGroupsAsync(string baseUrl, CancellationToken ct = default);
     Task<AreaGroupDto?> GetGroupAsync(string baseUrl, Guid id, CancellationToken ct = default);
     Task<List<AreaDto>> GetGroupAreasAsync(string baseUrl, Guid id, CancellationToken ct = default);

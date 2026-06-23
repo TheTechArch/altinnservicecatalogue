@@ -9,6 +9,7 @@ import RolePage from './pages/RolePage';
 import KeywordPage from './pages/KeywordPage';
 import AboutPage from './pages/AboutPage';
 import DelegationWizardPage from './pages/DelegationWizardPage';
+import SearchResultsPage from './pages/SearchResultsPage';
 import './App.css';
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
         <Route path="package/:packageId" element={<PackagePage />} />
         <Route path="role/:roleId" element={<RolePage />} />
         <Route path="resource/:id" element={<ResourcePage />} />
+        <Route path="results" element={<SearchResultsPage />} />
         <Route path="wizard" element={<DelegationWizardPage />} />
         <Route path="about" element={<AboutPage />} />
       </Route>

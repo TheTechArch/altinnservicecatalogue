@@ -442,9 +442,7 @@ export default function DelegationWizardPage() {
                   const description = pkg?.description;
                   const areaName = pkg?.area?.name;
                   const groupName = pkg?.area?.group?.name;
-                  const link = pkg?.id
-                    ? `/package/${encodeURIComponent(pkg.id)}`
-                    : `/package/${encodeURIComponent(entry.urnValue)}`;
+                  const link = `/package/${encodeURIComponent(entry.urnValue)}`;
 
                   return (
                     <Card key={entry.urnValue}>

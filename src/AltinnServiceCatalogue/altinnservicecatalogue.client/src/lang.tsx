@@ -186,6 +186,13 @@ const translations: Record<string, Record<Lang, string>> = {
   'results.packages': { nb: 'Tilgangspakker', en: 'Access packages' },
   'results.noResults': { nb: 'Ingen treff for', en: 'No results for' },
   'results.empty': { nb: 'Skriv inn minst to tegn for å søke.', en: 'Enter at least two characters to search.' },
+  'results.filterByType': { nb: 'Filtrer på tjenestetype', en: 'Filter by service type' },
+  'results.showAllTypes': { nb: 'Vis alle typer', en: 'Show all types' },
+  'results.noTypeMatch': { nb: 'Ingen tjenester samsvarer med valgte filtre.', en: 'No services match the selected filters.' },
+  'results.filterByStatus': { nb: 'Filtrer på status', en: 'Filter by status' },
+  'results.showAllStatuses': { nb: 'Vis alle statuser', en: 'Show all statuses' },
+  'results.filterByOwner': { nb: 'Filtrer på tjenesteeier', en: 'Filter by service owner' },
+  'results.showAllOwners': { nb: 'Vis alle tjenesteeiere', en: 'Show all service owners' },
 
   // Advanced Search tab
   'home.tabs.search': { nb: 'Avansert søk', en: 'Advanced search' },

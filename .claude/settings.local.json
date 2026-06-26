@@ -146,7 +146,19 @@
       "PowerShell($tt = Invoke-RestMethod \"https://platform.tt02.altinn.no/accessmanagement/api/v1/meta/info/accesspackages/export\" -Headers @{\"Accept-Language\"=\"eng\"}; $p = $tt | ForEach-Object { $_.areas } | ForEach-Object { $_.packages } | Select-Object -First 2; $p | ForEach-Object { \"tt02 eng: $\\($_.name\\)\" })",
       "Bash(curl -s \"https://platform.tt02.altinn.no/resourceregistry/api/v1/resource/altinn_access_management/policy/subjects\")",
       "PowerShell(dotnet build src/AltinnServiceCatalogue/AltinnServiceCatalogue.Server/AltinnServiceCatalogue.Server.csproj -c Debug --nologo -v q 2>&1)",
-      "PowerShell(dotnet build C:\\\\repos\\\\altinnservicecatalogue\\\\src\\\\AltinnServiceCatalogue\\\\AltinnServiceCatalogue.Server\\\\AltinnServiceCatalogue.Server.csproj -c Debug --nologo -v q 2>&1)"
+      "PowerShell(dotnet build C:\\\\repos\\\\altinnservicecatalogue\\\\src\\\\AltinnServiceCatalogue\\\\AltinnServiceCatalogue.Server\\\\AltinnServiceCatalogue.Server.csproj -c Debug --nologo -v q 2>&1)",
+      "Bash(node -e \"const d=require\\('@digdir/designsystemet-react'\\); console.log\\(Object.keys\\(d\\).filter\\(k=>/chip/i.test\\(k\\)\\)\\);\")",
+      "Bash(xargs grep -l \"Chip\")",
+      "mcp__altinn__find_resources",
+      "Bash(head -c 800 C:/Users/RUNLAR/.claude/projects/c--repos-altinnservicecatalogue/3b2a6b86-32b2-47a5-a8ab-e3b5f156622f/tool-results/mcp-altinn-find_resources-1782213416198.txt)",
+      "Bash(echo)",
+      "Bash(echo \"----LINES----\")",
+      "Bash(wc -l C:/Users/RUNLAR/.claude/projects/c--repos-altinnservicecatalogue/3b2a6b86-32b2-47a5-a8ab-e3b5f156622f/tool-results/mcp-altinn-find_resources-1782213416198.txt)",
+      "PowerShell($f=\"C:/Users/RUNLAR/.claude/projects/c--repos-altinnservicecatalogue/3b2a6b86-32b2-47a5-a8ab-e3b5f156622f/tool-results/mcp-altinn-find_resources-1782213416198.txt\"; $j = Get-Content $f -Raw | ConvertFrom-Json; $m = $j | Where-Object { $_.title -match 'registermelding' }; \"MATCHES: $\\($m.Count\\)\"; $m | ForEach-Object { \"- $\\($_.title\\) [$\\($_.resourceType\\)] owner=$\\($_.owner.orgcode\\) status=$\\($_.status\\) delegable=$\\($_.delegable\\)`n  id=$\\($_.identifier\\)\" })",
+      "PowerShell(dotnet build \"src/AltinnServiceCatalogue/AltinnServiceCatalogue.McpServer/AltinnServiceCatalogue.McpServer.csproj\" -nologo -clp:ErrorsOnly 2>&1)",
+      "PowerShell(dotnet build \"src/AltinnServiceCatalogue/AltinnServiceCatalogue.McpServer/AltinnServiceCatalogue.McpServer.csproj\" -nologo -clp:ErrorsOnly --output \"$env:TEMP\\\\sorm-build-check\" 2>&1 | Select-Object -Last 15)",
+      "PowerShell(dotnet build \"src/AltinnServiceCatalogue/AltinnServiceCatalogue.McpServer/AltinnServiceCatalogue.McpServer.csproj\" -nologo -clp:ErrorsOnly --output \"$env:TEMP\\\\sorm-build-check2\" 2>&1 | Select-Object -Last 20)",
+      "mcp__altinn__get_access_package_resources"
     ],
     "additionalDirectories": [
       "\\tmp"

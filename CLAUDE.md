@@ -35,3 +35,17 @@ Full-stack web app for browsing/searching public digital services (Altinn ecosys
 - Environments: tt02 → platform.tt02.altinn.no, prod → platform.altinn.no
 - Endpoints: resourcelist, {id}, search, bysubject, orgs, {id}/policy, {id}/policy/subjects
 - Policy endpoints use raw stream pass-through to avoid UrnJsonTypeValue serialization issues
+
+## MCP Server (`altinn`) + Skills
+- Project: `AltinnServiceCatalogue.McpServer` (stdio); registered in root `.mcp.json` as server `altinn`.
+- Every tool takes an optional `environment` arg: **defaults to `prod`** (`platform.altinn.no`); pass `tt02`
+  (`platform.tt02.altinn.no`) **only when the user explicitly asks**. Resolved per call in `AltinnApiClient.BaseUrlFor`.
+- Tools live in `AltinnTools.cs`, HTTP in `AltinnApiClient.cs`.
+- C# tool method names are exposed as snake_case (e.g. `GetResource` → `get_resource`).
+- NL-friendly convenience tools (resolve names → ids/URNs, return concise/enriched shapes):
+  `find_resources`, `find_access_packages`, `find_roles`, `get_resource_access_packages`,
+  `get_resource_roles`, `get_access_package_resources`. Lower-level raw tools also exist.
+- Restart/reconnect the MCP server after changing tools (it rebuilds via `dotnet run` on launch).
+- Question-answering skills in `.claude/skills/`: `altinn-catalogue` (router/overview),
+  `altinn-resource-access`, `altinn-subject-access`, `altinn-access-packages`, `altinn-roles`,
+  `altinn-resource-lookup`. Each documents the resolve-name-first recipe and which tools to chain.

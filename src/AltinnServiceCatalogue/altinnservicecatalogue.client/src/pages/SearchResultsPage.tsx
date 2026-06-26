@@ -12,12 +12,13 @@ import {
   Alert,
   Tag,
   Button,
+  Chip,
 } from '@digdir/designsystemet-react';
 import type { ServiceResource, AreaGroupDto, PackageDto } from '../types';
 import { getText, packagePath, getPackageUrnValue, fetchPackageGroupsBilingual } from '../helpers';
 import { useLang } from '../lang';
 import { useEnv } from '../env';
-import { ResourceTypeTag } from '../components/ResourceTypeTag';
+import { ResourceTypeTag, RESOURCE_TYPE_COLORS } from '../components/ResourceTypeTag';
 
 interface PackageHit {
   pkg: PackageDto;
@@ -89,6 +90,83 @@ export default function SearchResultsPage() {
     return { services, packages };
   }, [query, resources, groups, lang]);
 
+  // Distinct resource types present in the current service results, with counts
+  const availableTypes = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of results.services) {
+      if (r.resourceType) counts[r.resourceType] = (counts[r.resourceType] ?? 0) + 1;
+    }
+    return Object.entries(counts)
+      .map(([type, count]) => ({ type, count }))
+      .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type));
+  }, [results.services]);
+
+  // Type filter: preselect ALL types present, so the user can deselect to narrow
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const availableKey = availableTypes.map((t) => t.type).join('|');
+  useEffect(() => {
+    setSelectedTypes(availableTypes.map((t) => t.type));
+    // Re-preselect every time the set of available types changes (e.g. new query)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableKey]);
+
+  // Distinct statuses present in the current service results, with counts
+  const availableStatuses = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of results.services) {
+      if (r.status) counts[r.status] = (counts[r.status] ?? 0) + 1;
+    }
+    return Object.entries(counts)
+      .map(([status, count]) => ({ status, count }))
+      .sort((a, b) => b.count - a.count || a.status.localeCompare(b.status));
+  }, [results.services]);
+
+  // Status filter: preselect ALL statuses present, so the user can deselect to narrow
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const availableStatusKey = availableStatuses.map((s) => s.status).join('|');
+  useEffect(() => {
+    setSelectedStatuses(availableStatuses.map((s) => s.status));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableStatusKey]);
+
+  // Distinct service owners present in the current service results, with counts
+  const availableOwners = useMemo(() => {
+    const map = new Map<string, { code: string; name: string; count: number }>();
+    for (const r of results.services) {
+      const code = r.hasCompetentAuthority?.orgcode;
+      if (!code) continue;
+      const existing = map.get(code);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(code, {
+          code,
+          name: getText(r.hasCompetentAuthority?.name, lang) || code,
+          count: 1,
+        });
+      }
+    }
+    return [...map.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }, [results.services, lang]);
+
+  // Service owner filter: preselect ALL owners present, so the user can deselect to narrow
+  const [selectedOwners, setSelectedOwners] = useState<string[]>([]);
+  const availableOwnerKey = availableOwners.map((o) => o.code).join('|');
+  useEffect(() => {
+    setSelectedOwners(availableOwners.map((o) => o.code));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableOwnerKey]);
+
+  const visibleServices = useMemo(
+    () => results.services.filter(
+      (r) =>
+        (!r.resourceType || selectedTypes.includes(r.resourceType)) &&
+        (!r.status || selectedStatuses.includes(r.status)) &&
+        (!r.hasCompetentAuthority?.orgcode || selectedOwners.includes(r.hasCompetentAuthority.orgcode)),
+    ),
+    [results.services, selectedTypes, selectedStatuses, selectedOwners],
+  );
+
   const hasQuery = query.trim().length >= 2;
   const totalHits = results.services.length + results.packages.length;
 
@@ -157,11 +235,129 @@ export default function SearchResultsPage() {
           {/* Services */}
           {results.services.length > 0 && (
             <section className="mb-10">
-              <Heading level={3} data-size="sm" className="mb-6">
-                {t('results.services')} ({results.services.length})
+              <Heading level={3} data-size="sm" className="mb-4">
+                {t('results.services')} ({visibleServices.length}
+                {visibleServices.length !== results.services.length && ` / ${results.services.length}`})
               </Heading>
+
+              {/* Service type filter — all preselected, deselect to narrow */}
+              {availableTypes.length > 1 && (
+                <div className="mb-6">
+                  <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                    <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                      {t('results.filterByType')}
+                    </Paragraph>
+                    {selectedTypes.length !== availableTypes.length && (
+                      <Button
+                        variant="tertiary"
+                        data-size="sm"
+                        onClick={() => setSelectedTypes(availableTypes.map((at) => at.type))}
+                      >
+                        {t('results.showAllTypes')}
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {availableTypes.map(({ type, count }) => (
+                      <Chip.Checkbox
+                        key={type}
+                        data-color={RESOURCE_TYPE_COLORS[type] ?? 'neutral'}
+                        data-size="sm"
+                        checked={selectedTypes.includes(type)}
+                        onChange={() =>
+                          setSelectedTypes((prev) =>
+                            prev.includes(type) ? prev.filter((x) => x !== type) : [...prev, type],
+                          )
+                        }
+                      >
+                        {t(`resourceType.${type}`)} ({count})
+                      </Chip.Checkbox>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Status filter — all preselected, deselect to narrow */}
+              {availableStatuses.length > 1 && (
+                <div className="mb-6">
+                  <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                    <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                      {t('results.filterByStatus')}
+                    </Paragraph>
+                    {selectedStatuses.length !== availableStatuses.length && (
+                      <Button
+                        variant="tertiary"
+                        data-size="sm"
+                        onClick={() => setSelectedStatuses(availableStatuses.map((as) => as.status))}
+                      >
+                        {t('results.showAllStatuses')}
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {availableStatuses.map(({ status, count }) => (
+                      <Chip.Checkbox
+                        key={status}
+                        data-color={status === 'Active' ? 'success' : 'neutral'}
+                        data-size="sm"
+                        checked={selectedStatuses.includes(status)}
+                        onChange={() =>
+                          setSelectedStatuses((prev) =>
+                            prev.includes(status) ? prev.filter((x) => x !== status) : [...prev, status],
+                          )
+                        }
+                      >
+                        {status} ({count})
+                      </Chip.Checkbox>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Service owner filter — all preselected, deselect to narrow */}
+              {availableOwners.length > 1 && (
+                <div className="mb-6">
+                  <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                    <Paragraph data-size="sm" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                      {t('results.filterByOwner')}
+                    </Paragraph>
+                    {selectedOwners.length !== availableOwners.length && (
+                      <Button
+                        variant="tertiary"
+                        data-size="sm"
+                        onClick={() => setSelectedOwners(availableOwners.map((o) => o.code))}
+                      >
+                        {t('results.showAllOwners')}
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {availableOwners.map(({ code, name, count }) => (
+                      <Chip.Checkbox
+                        key={code}
+                        data-color="neutral"
+                        data-size="sm"
+                        checked={selectedOwners.includes(code)}
+                        onChange={() =>
+                          setSelectedOwners((prev) =>
+                            prev.includes(code) ? prev.filter((x) => x !== code) : [...prev, code],
+                          )
+                        }
+                      >
+                        {name} ({count})
+                      </Chip.Checkbox>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {visibleServices.length === 0 ? (
+                <Paragraph className="py-8" style={{ color: 'var(--ds-color-neutral-text-subtle)' }}>
+                  {t('results.noTypeMatch')}
+                </Paragraph>
+              ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {results.services.map((resource) => (
+                {visibleServices.map((resource) => (
                   <Link
                     key={resource.identifier}
                     to={`/resource/${encodeURIComponent(resource.identifier)}`}
@@ -196,6 +392,7 @@ export default function SearchResultsPage() {
                   </Link>
                 ))}
               </div>
+              )}
             </section>
           )}
 
